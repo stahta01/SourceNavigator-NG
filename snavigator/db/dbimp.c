@@ -48,16 +48,23 @@ MA 02111-1307, USA.
 
 #include <compat.h>
 
-extern	int	optind;
+/* FIXME: we should try and decouple dbimp from libcpp2. */
 
+/* Not used, but we need to define one due to us linking against libcpp2. */
+Tcl_Encoding encoding = NULL;
+
+extern	int	optind;
 #ifdef WIN32
-typedef const char	*ARGTYPE;
+extern	const char	*optarg;
 #else
-typedef char	*ARGTYPE;
+extern	char	*optarg;
 #endif /* WIN32 */
 
-extern ARGTYPE	optarg;
-
+extern	char	*filename_g;
+extern	int	yylineno,yycharno;
+extern	int	report_local_vars;
+extern	int	yyfd;
+extern	int	Paf_dbimp_running;
 extern	jmp_buf	BAD_IMPL_jmp_buf;
 
 static	int	killed;
@@ -78,6 +85,12 @@ my_panic(int sign)
 	killed = -1;
 
 	fprintf(stderr,"dbimp panic; signal %d received",sign);
+
+	if (filename_g)
+	{
+		fprintf(stderr,", in file: %s, at line: %d column: %d\n",
+			filename_g,yylineno,yycharno);
+	}
 	fprintf(stderr,"\n");
 	fflush(stderr);
 
@@ -239,7 +252,7 @@ check_running(char *lock_file)
  *	-1:			No permission to lock.
  */
 static	int
-create_lock_file(char *lock_file,const char *sn_host,const char *sn_pid)
+create_lock_file(char *lock_file,char *sn_host,char *sn_pid)
 {
 	int	fd;
 	char	status_buf[500];
@@ -417,20 +430,20 @@ main(int argc, char **argv)
 	char	save_c;
 	long	type;
 	int	linenum;
-	ARGTYPE	cache = NULL;
-	ARGTYPE	cross_cache = NULL;
+	char	*cache = NULL;
+	char	*cross_cache = NULL;
 	FILE	*logfp = NULL;
 	FILE	*infp = stdin;
-	ARGTYPE	file = NULL;
+	char	*file = NULL;
 	int	first_xref = TRUE;
 	char	*db_prefix = NULL;
-	ARGTYPE sn_host = NULL;
-	ARGTYPE sn_pid = NULL;
-	ARGTYPE omode = NULL;
+	char	*sn_host = NULL;
+	char	*sn_pid = NULL;
+	char	*omode = NULL;
 	char	lock_file[MAXPATHLEN];
 	int	set_sgns = FALSE;
 	LongString	buf;
-	ARGTYPE macro_file[MAX_MACRO_FILES];
+	char *macro_file[MAX_MACRO_FILES];
 	int macro_file_num = 0;
 
 	LongStringInit(&buf,0);
@@ -440,7 +453,7 @@ main(int argc, char **argv)
 	tty = fopen("/dev/tty","w");
 #endif /* !WIN32 && TTY_TRACE */
 
-	while((type = getopt(argc,argv,"c:C:f:H:O:P:M:sF:")) != EOF)
+	while((type = getopt(argc,argv,"c:C:lf:H:O:P:M:sFm:")) != EOF)
 	{
 		switch (type)
 		{
@@ -450,6 +463,10 @@ main(int argc, char **argv)
 
 		case 'C':
 			cross_cache = optarg;
+			break;
+
+		case 'l':
+			report_local_vars = TRUE;
 			break;
 
 		case 'f':
@@ -474,6 +491,14 @@ main(int argc, char **argv)
 
 		case 'F':
 			break;
+
+		case 'm':
+			if (macro_file_num < MAX_MACRO_FILES - 1)
+			{
+				macro_file[macro_file_num++] = optarg;
+			}
+			MacroReadFile(optarg);
+			break;
 		}
 	}
 
@@ -484,9 +509,9 @@ main(int argc, char **argv)
 
 	if (!db_prefix)
 	{
-		fprintf(stderr, "Usage: %s ?-c cache_size? ?-C cross_cache_size? ?-f file? db_prefix\n",
+		printf("Usage: %s ?-c cache_size? ?-C cross_cache_size? ?-l? ?-f file? ?-m macrofile? db_prefix\n",
 			argv[0]);
-		fflush(stderr);
+
 		exit(2);
 	}
 
@@ -503,13 +528,11 @@ main(int argc, char **argv)
 		{
 		case -1:
 			fprintf(stderr,"Could not create lock,%s\n",strerror(errno));
-			fflush(stderr);
 			exit(2);
 			break;
 
 		case FALSE:
 			fprintf(stderr,"The database is in an inconsistent state.\n");
-			fflush(stderr);
 			exit(2);
 			break;
 		}
@@ -546,8 +569,9 @@ main(int argc, char **argv)
 				(unsigned long)getpid(),
 				db_prefix,
 				cache ? cache : "#");
-			fprintf(logfp,"cross_cache: %s file: <%s>\n",
+			fprintf(logfp,"cross_cache: %s local_vars: %d file: <%s>\n",
 				cross_cache ? cross_cache : "#",
+				report_local_vars,
 				file ? file : "stdin");
 			if (macro_file_num)
 			{
@@ -564,6 +588,8 @@ main(int argc, char **argv)
 		}
 	}
 
+	Paf_dbimp_running = TRUE;
+
 	Paf_db_init_tables(db_prefix,cache,cross_cache);
 
 	linenum = 0;
@@ -575,6 +601,12 @@ main(int argc, char **argv)
 		killed = TRUE;
 
 		fprintf(stderr,"dbimp (soft) panic");
+
+		if (filename_g)
+		{
+			fprintf(stderr,", in file: %s, at line: %d column: %d\n",
+				filename_g,yylineno,yycharno);
+		}
 		fprintf(stderr,"\n");
 		fflush(stderr);
 		break;
@@ -603,13 +635,6 @@ main(int argc, char **argv)
 		if (bufp[0] == '#' || bufp[0] == '\0')
 			continue;
 
-		/* Pass on status message from the parser. */
-		if (strncmp(bufp, "Status: ", 8) == 0) {
-			fprintf(stdout, "%s\n", bufp);
-			fflush(stdout);
-			continue;
-		}
-
 		linenum++;
 
 		key = strchr(bufp,';');
@@ -620,7 +645,7 @@ main(int argc, char **argv)
 
 		if (!key || !data)
 		{
-			fprintf(stderr,"dbimp: Error: unrecognized input \"%s\"\n",bufp);
+			fprintf(stderr,"dbimp Error: %s\n",bufp);
 			fflush(stderr);
 			continue;
 		}
@@ -632,7 +657,7 @@ main(int argc, char **argv)
 
 		if (type < -3)
 		{
-			fprintf(stderr,"dbimp: Error: invalid type: %ld, %s\n",type,bufp);
+			fprintf(stderr,"dbimp invalid type: %ld, %s\n",type,bufp);
 			fflush(stderr);
 			continue;
 		}
@@ -646,7 +671,13 @@ main(int argc, char **argv)
 		}
 		else if (type == PAF_CROSS_REF_CPP)
 		{
-                  panic("PAF_CROSS_REF_CPP input to dbimp");
+			if (first_xref)
+			{
+				first_xref = FALSE;
+
+				open_tables_for_cross_ref();
+			}
+			Paf_insert_cross_ref_qry(bufp);
 		}
 		else
 		{
@@ -665,6 +696,11 @@ main(int argc, char **argv)
 
 	buf.free(&buf);
 
+	if (!first_xref)
+	{
+		Paf_Cpp_Cross_Ref_Clean();
+	}
+
 	if (Paf_db_close_tables() == -1)
 	{
 		fprintf(stderr,"Database closing error: %s\n",strerror(errno));
@@ -677,6 +713,12 @@ main(int argc, char **argv)
 	{
 		fprintf(logfp,"#dbimp (pid: %lu) exited\n",(unsigned long)getpid());
 		fclose(logfp);
+	}
+
+	if (yyfd >= 0)
+	{
+		close(yyfd);
+		yyfd = -1;
 	}
 
 	if (lock_file[0])
@@ -725,7 +767,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	fclose(infp);
+	fclose(infp);	/* It is important to synchronize. */
 
 	exit(killed == -1 ? 2 : 0);
 

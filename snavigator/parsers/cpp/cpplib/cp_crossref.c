@@ -146,7 +146,7 @@ extern void Paf_insert_cross_ref_qry( char *pcLine )
    }
    if (strcmp(file_g,prev_filename) != 0)
    {
-      printf("Status: Scanning: %s\n",file_g);  /* Informs SN which file is being parsed. */
+      printf("Scanning %s\n",file_g);  /* Informs SN which file is being parsed. */
       fflush(stdout);
 
       strcpy(prev_filename,file_g);
@@ -166,16 +166,7 @@ extern void Paf_insert_cross_ref_qry( char *pcLine )
          test_fp = 0;
       }
 
-      /* The filename is utf-8 encoded at this point, so
-       * convert it to the native system encoding before
-       * sending to open().
-       */
-      {
-         Tcl_DString sys;
-         Tcl_UtfToExternalDString(NULL, file_g, -1, &sys);
-         yyfd = open( Tcl_DStringValue(&sys), OPEN_MODE );
-         Tcl_DStringFree(&sys);
-      }
+      yyfd = open( file_g, OPEN_MODE );
 
       if( yyfd == -1 )
       {

@@ -475,7 +475,6 @@ proc sn_init_globals {} {
         set sn_options(def,color_mi) $sn_options(def,color_fu)
         set sn_options(def,color_iv) brown
         set sn_options(def,color_gv) goldenrod
-        set sn_options(def,color_lv) turquoise3
         set sn_options(def,color_con) goldenrod
         set sn_options(def,color_com) coral
         set sn_options(def,color_cov) "indian red"
@@ -1175,9 +1174,6 @@ proc sn_read_commandline_arguments {} {
             "-x" {
                     set sn_options(both,xref-create) ""
                 }
-            "--nosplash" {
-                    set sn_arguments(nosplash) 1
-                }
             "--def" -
             "-D" -
             "--define" {
@@ -1218,7 +1214,6 @@ proc sn_read_commandline_arguments {} {
                       \"--define\"
     -D, --define option=value
                        Defines an option, see \"--avail-options\"
-    --nosplash:        disables splash screen
     --debug:           enables debugging mode
     --home:            installation directory"
 

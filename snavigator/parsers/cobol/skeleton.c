@@ -36,7 +36,6 @@ MA 02111-1307, USA.
 #include <tcl.h>
 
 #include "sn.h"
-#include "parser.h"
 
 #include <compat.h>
  
@@ -64,40 +63,56 @@ log_symbol_filename(FILE * fp, char * fname)
 {
 	char	*outfile = NULL;
 
-	if (fname == NULL) {
-	    fprintf(stderr, "log_symbol_filename called with NULL fname\n");
-	    exit(1);
-	}
-
-	if (yyin) {
-	    fclose(yyin);
-	}
-
-	yyin = fopen(fname,OPEN_MODE);
-	if (!yyin)
+	if (fname)
 	{
-	    fprintf(stderr, "Error: unable to open file \"%s\",errno: %d\n",
-	            fname,errno);
-	    return 1;
+		if (yyin)
+			yyin = freopen(fname,OPEN_MODE,yyin);
+		else
+			yyin = fopen(fname,OPEN_MODE);
+		if (!yyin)
+		{
+			printf("Error: unable to open file \"%s\",errno: %d\n",
+				fname,errno);
+			fflush(stdout);
+			return 1;
+		}
 	}
+	else
+		yyin = stdin;
 
-	if (highlight)
+	if (fname)
 	{
-	    if (hig_fp)
-	    {
-	        fclose(hig_fp);
-	    }
+		if (highlight)
+		{
+			if (hig_fp)
+			{
+				fclose(hig_fp);
+			}
 
-	    outfile = Paf_tempnam(NULL,"hj");
-	    if (fp)
-	    {
-	        fprintf(fp,"%s\n",outfile);
-	    }
+			outfile = Paf_tempnam(NULL,"hj");
+			if (fp)
+			{
+				fprintf(fp,"%s\n",outfile);
+			}
 
-	    hig_fp = fopen(outfile,"w+");
+			hig_fp = fopen(outfile,"w+");
+		}
+		/* print filename only */
+		printf("%s\n",fname);
+		fflush(stdout);
+
+		put_file(fname,group,outfile);
 	}
-	put_status_parsing_file(fname);
-	put_file(fname,group,outfile);
+	else
+	{
+		if (highlight)
+		{
+			if (fp)
+				hig_fp = fp;
+			else
+				hig_fp = stdout;
+		}
+	}
 
 	return 0;
 }
@@ -110,16 +125,21 @@ main(int argc, char *argv[])
 	int	opt;
 	char	tmp[MAXPATHLEN];
 	char	*fname;
+	char	*pipe_cmd = NULL;
+	char	*cachesize = NULL;
+	char	*db_prefix = NULL;
 	char	*incl_to_pipe = NULL;
 	int	case_flag = TRUE;
 	FILE	*list_fp = NULL;
 	extern FILE *include_fp;
 	char	*cross_ref_file = NULL;
+	char    *sn_host = NULL;
+	char    *sn_pid = NULL;
 
 	/* Character set encoding (as defined by Tcl). */
 	Tcl_FindExecutable(argv[0]);
 
-	while((opt = getopt(argc,argv,"e:s:n:hy:I:g:i:ltx:Cr:O:")) != EOF)
+	while((opt = getopt(argc,argv,"e:s:n:hy:I:g:p:c:i:ltx:CrH:O:P:")) != EOF)
 	{
 		switch (opt)
    		{
@@ -132,13 +152,13 @@ main(int argc, char *argv[])
 			break;
 
 		case 'n':
-			/* FIXME: Remove db prefix option later */
+			db_prefix = optarg;
 			break;
 
 		case 'e':
                   if ((encoding = Tcl_GetEncoding(NULL, optarg)) == NULL)
                     {
-                      fprintf(stderr, "Unable to locate `%s' encoding\n", optarg);
+                      printf("Unable to locate `%s' encoding\n", optarg);
                       return 1;
                     }
                   break;
@@ -148,16 +168,19 @@ main(int argc, char *argv[])
 			break;
 
 		case 'y':
-			list_fp = fopen(optarg,"r");			
-			if (!list_fp) {
-			    fprintf(stderr, "Could not open: \"%s\", %s\n",
-			            optarg, strerror(errno));
-			    exit(1);
-			}
+			list_fp = fopen(optarg,"r");
 			break;
 
 		case 'I':	/* include path ignored */
 			include_fp = fopen(optarg,"r");
+			break;
+
+		case 'p':
+			pipe_cmd = optarg;
+			break;
+
+		case 'c':
+			cachesize = optarg;
 			break;
 
 		case 'i':
@@ -174,7 +197,7 @@ main(int argc, char *argv[])
 		case 'S':
 			break;
 
-		case 'x': /* cross reference file */
+		case 'x': /* cross reference file (ignored) */
 			cross_ref_file = optarg;
 			break;
 
@@ -189,6 +212,13 @@ main(int argc, char *argv[])
 		case 'D':
 			break;
 
+		case 'H':
+			sn_host = optarg;
+			break;
+
+		case 'P':
+			sn_pid = optarg;
+			break;
 		}
 	}
 
@@ -196,7 +226,7 @@ main(int argc, char *argv[])
 	{
 		if (!(cross_ref_fp = fopen(cross_ref_file,"a")))
 		{
-			fprintf(stderr, "Error: (open) \"%s, errno: %d\"\n",
+			printf("Error: (open) \"%s, errno: %d\"\n",
 				cross_ref_file,errno);
 			exit(1);
 		}
@@ -204,7 +234,13 @@ main(int argc, char *argv[])
 
 	if (optind < argc || list_fp)
 	{
-		Paf_Pipe_Create(incl_to_pipe);
+		if (pipe_cmd)
+		{
+			Paf_Pipe_Create(pipe_cmd,db_prefix,incl_to_pipe,cachesize,
+			   sn_host,sn_pid);
+		}
+		else
+			Paf_db_init_tables(db_prefix,cachesize, NULL);
 
 		if (list_fp)
 		{
@@ -215,8 +251,6 @@ main(int argc, char *argv[])
 				{
 					*fname = '\0';
 				}
-				if (!*tmp || *tmp == '#')
-					continue;
 
 				if (log_symbol_filename(out_fp,tmp) == 0)
 				{
@@ -227,10 +261,9 @@ main(int argc, char *argv[])
 		}
 		else
 		{
-			/* This part is called when a file has been saved,
-			 * thus we parse the file and provide highlighting.
-			 */
-
+		/* This part is called when a file has been saved, thus
+         * we parse the file and provide highlighting.
+	 	 */
 			if (optind == (argc - 1) && highlight != -1)
 				highlight = 1;
 
@@ -243,8 +276,11 @@ main(int argc, char *argv[])
 	}
 	else
 	{
-		fprintf(stderr, "-y or a file name is required\n");
-		exit(1);
+	/* We provide only highlighting for stdin. */
+		if (log_symbol_filename(out_fp,(char *)NULL) == 0)
+		{
+			start_parser(NULL,0,stdout,highlight);
+		}
 	}
 
 	if (yyin)

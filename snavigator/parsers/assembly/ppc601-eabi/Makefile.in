@@ -77,16 +77,35 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 AWK = @AWK@
+BFDHDIR = @BFDHDIR@
+BFDLIB = @BFDLIB@
 CC = @CC@
 CC_FOR_BUILD = @CC_FOR_BUILD@
 CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
+DEJAGNUHDIR = @DEJAGNUHDIR@
+DEJAGNULIB = @DEJAGNULIB@
+DEVOHDIR = @DEVOHDIR@
+ENDIAN = @ENDIAN@
 EXEEXT = @EXEEXT@
+GUILIB = @GUILIB@
+HAVE_DEVO_SIM = @HAVE_DEVO_SIM@
+IDEHDIR = @IDEHDIR@
+IDELIB = @IDELIB@
+IDETCLLIB = @IDETCLLIB@
+ILUHDIR = @ILUHDIR@
+ILULIB = @ILULIB@
+ILUTOP = @ILUTOP@
+INTLHDIR = @INTLHDIR@
+INTLLIB = @INTLLIB@
 ITCLHDIR = @ITCLHDIR@
+ITCLLIB = @ITCLLIB@
+ITCLMKIDX = @ITCLMKIDX@
+ITCLSH = @ITCLSH@
 ITCL_BUILD_LIB_SPEC = @ITCL_BUILD_LIB_SPEC@
 ITCL_LIB_FILE = @ITCL_LIB_FILE@
 ITCL_LIB_FULL_PATH = @ITCL_LIB_FULL_PATH@
@@ -95,18 +114,25 @@ ITK_BUILD_LIB_SPEC = @ITK_BUILD_LIB_SPEC@
 ITK_LIB_FILE = @ITK_LIB_FILE@
 ITK_LIB_FULL_PATH = @ITK_LIB_FULL_PATH@
 LEX = @LEX@
-LEXLIB = @LEXLIB@
+LIBERTY = @LIBERTY@
+LIBGCC = @LIBGCC@
+LIBGUIHDIR = @LIBGUIHDIR@
+LIBGUILIB = @LIBGUILIB@
+LIBIBERTY = @LIBIBERTY@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 OBJEXT = @OBJEXT@
+OPCODESLIB = @OPCODESLIB@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
+RUNTESTDIR = @RUNTESTDIR@
+SIMHDIR = @SIMHDIR@
+SIMLIB = @SIMLIB@
 TCLCONFIG = @TCLCONFIG@
 TCLHDIR = @TCLHDIR@
 TCL_BIN_DIR = @TCL_BIN_DIR@
 TCL_BUILD_LIB_SPEC = @TCL_BUILD_LIB_SPEC@
 TCL_CFLAGS = @TCL_CFLAGS@
-TCL_DBGX = @TCL_DBGX@
 TCL_DEFS = @TCL_DEFS@
 TCL_LD_FLAGS = @TCL_LD_FLAGS@
 TCL_LD_SEARCH_FLAGS = @TCL_LD_SEARCH_FLAGS@
@@ -117,7 +143,9 @@ TCL_LIB_SPEC = @TCL_LIB_SPEC@
 TCL_RANLIB = @TCL_RANLIB@
 TCL_SHLIB_CFLAGS = @TCL_SHLIB_CFLAGS@
 TCL_SHLIB_LD = @TCL_SHLIB_LD@
+TIXHDIR = @TIXHDIR@
 TIX_BUILD_LIB_SPEC = @TIX_BUILD_LIB_SPEC@
+TIX_LIB_FULL_PATH = @TIX_LIB_FULL_PATH@
 TKCONFIG = @TKCONFIG@
 TKHDIR = @TKHDIR@
 TK_BUILD_INCLUDES = @TK_BUILD_INCLUDES@
@@ -135,26 +163,28 @@ WIN32LDAPP = @WIN32LDAPP@
 WIN32LIBS = @WIN32LIBS@
 WINFLAGS = @WINFLAGS@
 YACC = @YACC@
+ac_cv_c_itclsh = @ac_cv_c_itclsh@
 
 AUTOMAKE_OPTIONS = cygnus
 
 toolbox = $(top_builddir)/../../toolbox
 common = $(top_builddir)/../../common
 libutils = $(top_builddir)/../../../misc/libutils
+db = $(top_builddir)/../../../db
 
 bin_PROGRAMS = abrowser
 
 INCLUDES = $(WINFLAGS) -I$(top_srcdir)/../../../hyper 	-I$(top_srcdir)/../../toolbox 	-I$(top_srcdir)/../../common
 
 
-abrowser_SOURCES = abrowser.c
-abrowser_LDADD = $(toolbox)/libsnptools.a 		$(common)/libcommon.a 		$(libutils)/libutils.a 		$(TCL_BUILD_LIB_SPEC) $(TCL_LIBS)
+abrowser_SOURCES = abrowser.l
+abrowser_LDADD = $(toolbox)/libsnptools.a $(db)/libdbutils.a 		$(DB_LIBDIR)/libdb.a $(common)/libcommon.a 		$(libutils)/libutils.a 		$(TCL_BUILD_LIB_SPEC) $(TCL_LIBS)
 
 
-abrowser_DEPENDENCIES = $(common)/libcommon.a 			$(toolbox)/libsnptools.a 			$(libutils)/libutils.a
+abrowser_DEPENDENCIES = $(DB_LIBDIR)/libdb.a 			$(db)/libdbutils.a 			$(common)/libcommon.a 			$(toolbox)/libsnptools.a 			$(libutils)/libutils.a
 
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-mkinstalldirs = $(SHELL) $(top_srcdir)/../../../../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES = 
 bin_PROGRAMS =  abrowser$(EXEEXT)
@@ -167,13 +197,15 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 abrowser_OBJECTS =  abrowser.$(OBJEXT)
 abrowser_LDFLAGS = 
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+LEXLIB = @LEXLIB@
 CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
-DIST_COMMON =  ./stamp-h.in Makefile.am Makefile.in acinclude.m4 \
-aclocal.m4 config.h.in configure configure.in install-sh missing \
-mkinstalldirs
+DIST_COMMON =  ./stamp-h.in Makefile.am Makefile.in abrowser.c \
+acinclude.m4 aclocal.m4 config.h.in configure configure.in install-sh \
+missing mkinstalldirs
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
@@ -185,7 +217,7 @@ OBJECTS = $(abrowser_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .S .c .o .obj .s
+.SUFFIXES: .S .c .l .o .obj .s
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --cygnus Makefile
 
@@ -282,6 +314,8 @@ maintainer-clean-compile:
 abrowser$(EXEEXT): $(abrowser_OBJECTS) $(abrowser_DEPENDENCIES)
 	@rm -f abrowser$(EXEEXT)
 	$(LINK) $(abrowser_LDFLAGS) $(abrowser_OBJECTS) $(abrowser_LDADD) $(LIBS)
+.l.c:
+	$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@
 
 tags: TAGS
 
@@ -401,6 +435,7 @@ distclean-generic:
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
+	-test -z "abrowserl" || rm -f abrowserl
 mostlyclean-am:  mostlyclean-hdr mostlyclean-binPROGRAMS \
 		mostlyclean-compile mostlyclean-tags \
 		mostlyclean-generic
@@ -440,12 +475,6 @@ all-am all installdirs mostlyclean-generic distclean-generic \
 clean-generic maintainer-clean-generic clean mostlyclean distclean \
 maintainer-clean
 
-
-# Used to regenerate .c from .l file
-flexgen:
-	cp $(srcdir)/abrowser.l .
-	$(LEX) -t $(LFLAGS) abrowser.l > $(srcdir)/abrowser.c
-	rm abrowser.l
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

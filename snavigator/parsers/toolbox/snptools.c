@@ -12,7 +12,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
 #include <config.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -33,7 +32,6 @@
 
 #include <tcl.h> 
 #include "snptools.h"
-#include "parser.h"
 
 /* For platforms that do not have getopt globals in their headers. */
 extern char *optarg;
@@ -50,11 +48,15 @@ static long column = 0;
 static long savedLine;
 static long savedColumn;
 
+static char * cachesize = NULL;
+static char * dbprefix = NULL;
 static char * group = NULL;
 static char * incl_to_pipe = NULL;
 static char * includename = NULL;
+static char * pipecmd = NULL; 
+static char * sn_host = NULL;
+static char * sn_pid = NULL;
 static char * xref_filename = NULL;
-static char * dump_tokens_file = NULL;
 
 static char includebuf[512];
 static char currentFilename[MAXPATHLEN];
@@ -63,18 +65,14 @@ static char currentFilename[MAXPATHLEN];
  * boolean values (with their defaults) for command line switches
  */
 static int case_sensitive = 1;
-extern int comment_database;
+static int comments = 0;
 static int dialect = 0;
-extern int report_local_vars;
 static int drop_usr_headers = 0;
+static int local_vars = 0;
 static int treat_as_cplusplus = 0;
 
 static FILE * listfp = NULL;
 static FILE * outfp = NULL;
-
-static int highlight = 0;
-static int highlight_number = 0;
-static FILE * highlightfp = NULL;
 
 /*
  * Return the first include path from the list (or NULL if the list is empty).
@@ -180,8 +178,12 @@ sn_main(int argc, char *argv[], char * group, FILE ** lexstream, int (*lexer)(),
   }
   else
   {
-    sn_error("-y or file name required\n");
-    return(1);
+    /* We provide only highlighting for stdin */
+    if (sn_register_filename(lexstream, (char *) NULL) == 0)
+    {
+      reset();
+      lexer();
+    }
   }
   sn_close();
   return(0);
@@ -197,28 +199,34 @@ sn_getopt(enum sn_options opt)
 {
   switch (opt)
   {
+    case SN_OPT_CACHESIZE:
+      return cachesize;
     case SN_OPT_CASE_SENSITIVE:
       return (void *) case_sensitive; 
     case SN_OPT_COMMENTS:
-      return (void *) comment_database;
+      return (void *) comments;
+    case SN_OPT_DBPREFIX:
+      return dbprefix;
     case SN_OPT_DIALECT:
       return (void *) dialect;
-    case SN_OPT_DUMP_TOKENS:
-      return (void *) dump_tokens_file;
     case SN_OPT_DROP_USR_HEADERS:
       return (void *) drop_usr_headers;
     case SN_OPT_GROUP:
       return group;
-    case SN_OPT_HIGHLIGHT:
-      return (void *) highlight;
+    case SN_OPT_HOSTNAME:
+      return sn_host;
     case SN_OPT_INCL_TO_PIPE:
       return incl_to_pipe;
     case SN_OPT_INCLUDE_LIST:
       return (void *) includename;
     case SN_OPT_LOCAL_VARS:
-      return (void *) report_local_vars;
+      return (void *) local_vars;
     case SN_OPT_LISTFILE:
       return listfp;
+    case SN_OPT_PID:
+      return sn_pid;
+    case SN_OPT_PIPECMD:
+      return pipecmd;
     case SN_OPT_TREAT_AS_CPLUSPLUS:
       return (void *) treat_as_cplusplus;
     case SN_OPT_XREF_FILENAME:
@@ -243,7 +251,7 @@ sn_process_options(int argc, char *argv[])
   /* Character set encoding (as defined by Tcl). */
   Tcl_FindExecutable(argv[0]);
 
-  while ((opt = getopt(argc, argv, "I:n:s:hy:g:x:i:luB:e:tCrDS:O:T:")) != EOF)
+  while ((opt = getopt(argc, argv, "I:n:s:hy:g:p:c:x:i:luB:e:tCrDS:H:O:P:")) != EOF)
   {
     switch (opt)
     {
@@ -251,6 +259,10 @@ sn_process_options(int argc, char *argv[])
         /* silently ignore according to zkoppany */
         break;
 
+      case 'c':
+        cachesize = optarg;
+	break;
+ 
       case 'C':
         treat_as_cplusplus = 1;
         break;
@@ -272,7 +284,10 @@ sn_process_options(int argc, char *argv[])
         break;
 
       case 'h':
-        highlight = 1;
+        break;
+
+      case 'H':
+        sn_host = optarg;
         break;
 
       case 'i':
@@ -284,15 +299,23 @@ sn_process_options(int argc, char *argv[])
         break;
 
       case 'l':
-        report_local_vars = 1;
+        local_vars = 1;
         break;
 
       case 'n':
-        /* FIXME: Remove db prefix option later */
+        dbprefix = optarg;
+        break;
+
+      case 'p':
+        pipecmd = optarg;
+        break;
+ 
+      case 'P':
+        sn_pid = optarg;
         break;
 
       case 'r':
-        comment_database = 1;
+        comments = 1;
         break;
 
       case 's':
@@ -305,11 +328,6 @@ sn_process_options(int argc, char *argv[])
 
       case 'S':
         /* silently ignore according to zkoppany */
-        break;
-
-      case 'T':
-        /* Dump tokens to a file and exit */
-        dump_tokens_file = optarg;
         break;
 
       case 't':
@@ -328,7 +346,7 @@ sn_process_options(int argc, char *argv[])
         listfp = fopen(optarg, "r");
 	if (listfp == NULL)
 	{
-	  sn_error("Could not open \"%s\", %s\n", optarg, strerror(errno));
+	  sn_error("could not open %s\n", optarg);
 	  sn_panic();
 	}
 	break;
@@ -377,46 +395,6 @@ sn_message(char * format, ...)
 }
 
 /*
- * Write highlight info to a file that will be read by
- * the IDE and used to add highlight tags to the editor.
- * This function should only be called when the -h
- * option has been passed to the browser.
- */
-void sn_highlight(enum sn_highlights type,
-    long start_line, int start_column,
-    long end_line, int end_column)
-{
-  char * tag;
-  if (!highlight) return;
-
-  switch (type) {
-    case SN_HIGH_COMMENT:
-      tag = "rem";
-      break;
-    case SN_HIGH_KEYWORD:
-      tag = "key";
-      break;
-    case SN_HIGH_STRING:
-      tag = "str";
-      break;
-    case SN_HIGH_VAR_GLOBAL:
-      tag = "gv";
-      break;
-    case SN_HIGH_VAR_LOCAL:
-      tag = "lv";
-      break;
-    default:
-      sn_error("Unknown highlight type %d\n", type);
-      sn_panic();
-  }
-
-  fprintf(highlightfp, "%d %s %d.%d %d.%d\n",
-    highlight_number++, /* Ignored by Sn_Highlight_Text */
-    tag,
-    start_line, start_column, end_line, end_column);
-}
-
-/*
  * Make the executable exit due to some error with the error code expected by
  * S-N.
  */
@@ -448,7 +426,19 @@ sn_set_group(char *newGroup)
 int
 sn_init()
 {
-  Paf_Pipe_Create(incl_to_pipe);
+  if (pipecmd != NULL)
+  {
+    if (Paf_Pipe_Create(pipecmd, dbprefix, incl_to_pipe, cachesize,
+                        sn_host, sn_pid) < 0)
+    {
+      sn_message("Pipe error: %s\n", pipecmd);
+      sn_panic();
+    }
+  }
+  else
+  {
+    Paf_db_init_tables(dbprefix, cachesize, NULL);
+  }
 
   if (xref_filename != NULL && !(cross_ref_fp = fopen(xref_filename, "a")))
   {
@@ -476,12 +466,16 @@ sn_close_db()
 int
 sn_register_filename(FILE ** lexstream, char * filename)
 {
+  if (filename)
+  {
     if (*lexstream)
     {
-      fclose(*lexstream);
+      *lexstream = freopen(filename, OPEN_MODE, *lexstream);
     }
-    
-    *lexstream = fopen(filename, OPEN_MODE);
+    else
+    {
+      *lexstream = fopen(filename, OPEN_MODE);
+    }
 
     if (!(*lexstream))
     {
@@ -490,32 +484,12 @@ sn_register_filename(FILE ** lexstream, char * filename)
     }
     else
     {
-      char * highlight_fname = NULL;
-
-      /*
-       * If the -h option was passed then create a tmp file
-       * and save highlight info into the file. The -s option
-       * is used in conjunction with -h to indicate a file
-       * that the name of the highlight file will be saved in.
-       */
-
-      if (highlight) {
-        if (highlightfp) {
-          fclose(highlightfp);
-        }
-        highlight_fname = Paf_tempnam(NULL,"hj");
-        if (outfp) {
-          fprintf(outfp,"%s\n",highlight_fname);
-        }      
-        highlightfp = fopen(highlight_fname,"w+");
-        highlight_number = 1;
-      }
-
       strcpy(currentFilename, filename);
-      put_status_parsing_file(filename);
-      put_file(filename, group, highlight_fname);
+      sn_message("%s...\n", filename);
+      put_file(filename, group, NULL);
     }
-    return(0);
+  }
+  return(0);
 }
 
 /*
@@ -662,8 +636,6 @@ sn_parse_all(FILE ** lexstream, int (*parse)(), void (*reset)())
     {
       *temp = 0; /* null terminate the string */
     }
-    if (!*filename || *filename == '#')
-      continue;
 
     if (sn_register_filename(lexstream, filename) == 0)
     {
@@ -690,11 +662,6 @@ sn_close()
   if (outfp != NULL)
   {
     fclose(outfp);
-  }
-
-  if (highlightfp != NULL)
-  {
-    fclose(highlightfp);
   }
   
   if (cross_ref_fp != NULL)
@@ -800,18 +767,6 @@ int sn_insert_xref(int type, int scope_type, int scope_level,
 {
   if (sn_cross_referencing())
   {
-    /* Use special "GLOBAL" namespace, funcname should be NULL.
-     * Currently, scope_type is changed to a "fu" but it really
-     * should be "na". Namespace support in the IDE needs to
-     * be fixed up so that xrefs in namespaces work before
-     * "na" can be passed.
-     */
-    if (scope_type == SN_GLOBAL_NAMESPACE) {
-        assert(funcname == NULL);
-        funcname = "GLOBAL";
-        scope_type = SN_FUNC_DEF;
-    }
-
     return put_cross_ref(type, scope_type, scope_level, classname, funcname, 
                          argtypes, refclass, refsymbol, ref_arg_types, 
                          filename, lineno, acc);

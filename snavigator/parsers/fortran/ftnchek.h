@@ -354,7 +354,7 @@ MA 02111-1307, USA.
 
 
 SHARED FILE
-	    *yyin,  /* Input file */
+	    *input_fd,  /* Input file */
 	    *list_fd,   /* Output file for listing */
 	    *project_fd;/* Project file for symtab info summary */
 SHARED char *current_filename,  /* name of current input file */

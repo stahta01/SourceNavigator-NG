@@ -24,28 +24,22 @@
 
 enum sn_options
 {
+  SN_OPT_CACHESIZE,
   SN_OPT_CASE_SENSITIVE,
   SN_OPT_COMMENTS,
   SN_OPT_DIALECT,
+  SN_OPT_DBPREFIX,
   SN_OPT_DROP_USR_HEADERS,
-  SN_OPT_DUMP_TOKENS,
   SN_OPT_GROUP,
-  SN_OPT_HIGHLIGHT,
+  SN_OPT_HOSTNAME,
   SN_OPT_INCL_TO_PIPE,
   SN_OPT_INCLUDE_LIST,
   SN_OPT_LISTFILE,
   SN_OPT_LOCAL_VARS,
+  SN_OPT_PID,
+  SN_OPT_PIPECMD,
   SN_OPT_TREAT_AS_CPLUSPLUS,
   SN_OPT_XREF_FILENAME
-};
-
-enum sn_highlights
-{
-  SN_HIGH_COMMENT = 1,
-  SN_HIGH_KEYWORD,
-  SN_HIGH_STRING,
-  SN_HIGH_VAR_GLOBAL,
-  SN_HIGH_VAR_LOCAL
 };
 
 /*
@@ -88,7 +82,6 @@ enum sn_highlights
 #define SN_REF_UNDEFINED      PAF_REF_UNDEFINED
 #define SN_CROSS_REF_FILE     PAF_CROSS_REF_FILE
 
-
 #define SN_REF_TO_TYPEDEF     PAF_REF_TO_TYPEDEF
 #define SN_REF_TO_DEFINE      PAF_REF_TO_DEFINE
 #define SN_REF_TO_ENUM        PAF_REF_TO_ENUM
@@ -110,8 +103,6 @@ enum sn_highlights
 
 #define SN_REF_SCOPE_LOCAL    PAF_REF_SCOPE_LOCAL
 #define SN_REF_SCOPE_GLOBAL   PAF_REF_SCOPE_GLOBAL
-
-#define SN_GLOBAL_NAMESPACE   PAF_NAMESPACE_DEF
 
 #define SN_REF_READ           PAF_REF_READ
 #define SN_REF_WRITE          PAF_REF_WRITE
@@ -304,15 +295,6 @@ char * sn_afterlastwspace(char * buf);
  * Search the include path for an include file.
  */
 int sn_find_file(char * filename, char * buf);
-
-/*
- * Write highlight info to a file that will be read by
- * the IDE and used to add highlight tags to the editor.
- */
-
-void sn_highlight(enum sn_highlights,
-    long start_line, int start_column,
-    long end_line, int end_column);
 
 #endif /* SNPTOOLS_H */
 

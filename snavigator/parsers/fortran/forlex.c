@@ -1959,7 +1959,7 @@ PRIVATE int
 */
 
 typedef struct {
-  FILE     *yyin;
+  FILE     *input_fd;
   char	   *fname;
   char     line[MAXLINE];  /* MAXLINE is defined in ftnchek.h */
   int      curr_char;
@@ -2007,8 +2007,8 @@ fprintf(list_fd,"\npush_include_file: curr_char=%c (%d)",curr_char,curr_char);
 		     col_num, next_line_num, col_num+7, 0, NULL, NULL, NULL, NULL, line_num,
 		     col_num, next_line_num, col_num+7);
 
-	 include_stack[incdepth].yyin = yyin;
-	 yyin = fd;
+	 include_stack[incdepth].input_fd = input_fd;
+	 input_fd = fd;
 
 	 include_stack[incdepth].fname = current_filename;
 	 current_filename = fname;
@@ -2054,8 +2054,8 @@ incdepth);
 		   include_stack[incdepth].fname);
 	 }
 
-	 fclose(yyin);
-	 yyin = include_stack[incdepth].yyin;
+	 fclose(input_fd);
+	 input_fd = include_stack[incdepth].input_fd;
 
 	 current_filename = include_stack[incdepth].fname;
 
@@ -2481,7 +2481,7 @@ advance()
 			next_index   = 1;		/* rigo */
 			curr_index   = 0;		/* rigo */
 			line_is_printed = FALSE;
-			if( getstrn(line,MAXLINE+1,yyin) == NULL ) {
+			if( getstrn(line,MAXLINE+1,input_fd) == NULL ) {
 				next_char = EOF;
 				line_is_printed = TRUE;
 				return;

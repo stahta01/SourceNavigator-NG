@@ -251,12 +251,9 @@ itcl::class XRef& {
           CrossAcceptStatic] -underline [get_indep Pos CrossAcceptStatic]\
           -variable ${this}-accept_static -command " ${this} toggle_static m "
 
-        grid ${can} -row 0 -column 0 -sticky news
-        grid $itk_component(hull).scrollx -row 1 -column 0 -sticky ew
-        grid $itk_component(hull).scrolly -row 0 -column 1 -sticky ns
-
-        grid rowconfigure $itk_component(hull) 0 -weight 1
-        grid columnconfigure $itk_component(hull) 0 -weight 1
+        pack $itk_component(hull).scrollx -side bottom -fill x
+        pack $itk_component(hull).scrolly -side right -fill y
+        pack $itk_component(hull).can -side top -fill both -expand y
 
         #Set colors and fonts
         Update_Layout
@@ -2117,9 +2114,9 @@ itcl::class XRef& {
         foreach s "r w p u" {
             upvar #0 ${t}-access-${s} val
             if {[lsearch -exact ${cross_ref_access} ${s}] == -1} {
-                set val ""
+                ::set val ""
             } else {
-                set val ${s}
+                ::set val ${s}
             }
             switch ${s} {
                 "r" {
@@ -2180,9 +2177,9 @@ itcl::class XRef& {
             upvar #0 ${v} value
             if {${set}} {
                 set scope [lindex [split ${v} "-"] end]
-                set value ${scope}
+                ::set value ${scope}
             } else {
-                set value ""
+                ::set value ""
             }
         }
     }
@@ -2895,7 +2892,7 @@ proc xref_disp_tmeter {txt value} {
 }
 
 #display status of xref processing
-proc xref_termometer_disp {file is_delete} {
+proc xref_termometer_disp {line} {
     global sn_options
     global xref_termometer
 
@@ -2909,9 +2906,10 @@ proc xref_termometer_disp {file is_delete} {
     }
 
     #store the last accessed file for bug reporting
-    set xref_termometer(lastfile) $file
+    set i [string first " " ${line}]
+    set xref_termometer(lastfile) [string range ${line} [expr ${i} + 1] end]
 
-    if {$is_delete} {
+    if {[string first "Deleting " ${line}] == 0} {
         incr xref_termometer(del_index)
         upvar #0 xref_termometer(del_index) counter
         set txt "Deleting"

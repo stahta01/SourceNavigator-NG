@@ -627,7 +627,7 @@ proc sn_hide_show_project {cmd {mainw ""}} {
 }
 
 proc wait_xref_end {procfd varb} {
-    set end [gets ${procfd} line]
+    set end [gets ${procfd} msg]
     if {${end} < 0} {
         #give the info that the process has been terminated
         upvar #0 ${varb} var
@@ -638,20 +638,8 @@ proc wait_xref_end {procfd varb} {
         xref_delete_termometers
     } else {
         #display xref info
-
-        set scanning "Status: Scanning: "
-        if {[string first $scanning ${line}] == 0} {
-            set file [string range $line [string length $scanning] end]
-            xref_termometer_disp $file 0
-        }
-
-        set deleting "Status: Deleting: "
-        if {[string first $deleting ${line}] == 0} {
-            set file [string range $line [string length $deleting] end]
-            xref_termometer_disp $file 1
-        }
-
-        sn_log "wait_xref_end: ${line}"
+        xref_termometer_disp ${msg}
+        sn_log "wait_xref_end: ${msg}"
     }
     update idletasks
 }
@@ -781,8 +769,7 @@ proc sn_session {} {
 
     #this is the correct place to show the splash screen.
     #show the splash screen, only when no batch_mode
-    # Also allow a nosplash arg. 
-    if {(![sn_batch_mode]) && (![sn_nosplash])} {
+    if {![sn_batch_mode]} {
         sn_show_splash_screen
     }
 
@@ -836,14 +823,6 @@ proc sn_start_new_session {{opts ""}} {
 proc sn_batch_mode {} {
     global sn_arguments
     if {[info exists sn_arguments(batchmode)] && $sn_arguments(batchmode)} {
-        return 1
-    }
-    return 0
-}
-
-proc sn_nosplash {} {
-    global sn_arguments
-    if {[info exists sn_arguments(nosplash)] && $sn_arguments(nosplash)} {
         return 1
     }
     return 0
@@ -915,7 +894,7 @@ proc sn_process_gui {} {
     return 1
 }
 
-proc sn_load_xref {xfer_file cbrowser_xref} {
+proc sn_load_xref {xfer_file} {
     global sn_options
     global sn_path ProcessingCancelled
     global SN_cross_pid
@@ -934,45 +913,19 @@ proc sn_load_xref {xfer_file cbrowser_xref} {
     catch {paf_db_to close}
     catch {paf_db_by close}
 
-    # Generate xref.
-    #
-    # The output of the cbrowser executable needs to
-    # be processed again by cbrowser2 before piping
-    # it to dbimp. If no C/C++ files have been
-    # parsed then just pass the file name containing
-    # xref output to dbimp.
-
-    set cbr2_cmd [file join $sn_path(bindir) cbrowser2]
-    
+    #generate xref.
+    set cmd [list [file join $sn_path(bindir) dbimp] -H [info hostname]\
+      -P [pid] -c $sn_options(def,db_cachesize)\
+      -C $sn_options(def,xref-db-cachesize)]
     if {[string first "-l" $sn_options(sys,parser_switches)] != -1} {
-        lappend cbr2_cmd -l
+        lappend cmd -l
     }
-
     if {[info exists sn_options(macrofiles)] && $sn_options(macrofiles) != ""} {
         foreach mf $sn_options(macrofiles) {
-            lappend cbr2_cmd -m ${mf}
+            lappend cmd -m ${mf}
         }
     }
-
-    lappend cbr2_cmd -n $sn_options(db_files_prefix)
-    lappend cbr2_cmd -c $sn_options(def,db_cachesize) \
-        -C $sn_options(def,xref-db-cachesize)
-    lappend cbr2_cmd ${xfer_file}
-
-    set dbimp_cmd [list [file join $sn_path(bindir) dbimp] \
-        -H [info hostname] \
-        -P [pid] -c $sn_options(def,db_cachesize) \
-        -C $sn_options(def,xref-db-cachesize)]
-
-    if {$cbrowser_xref} {
-        lappend dbimp_cmd $sn_options(db_files_prefix)
-        set cmd [concat $cbr2_cmd | $dbimp_cmd]
-    } else {
-        lappend dbimp_cmd -f ${xfer_file}
-        lappend dbimp_cmd $sn_options(db_files_prefix)
-        set cmd $dbimp_cmd
-    }
-
+    lappend cmd $sn_options(db_files_prefix) < ${xfer_file}
     sn_log "cross-ref command: ${cmd}"
 
     if {[catch {set fd [open "| ${cmd}" r]} err]} {
@@ -983,7 +936,7 @@ proc sn_load_xref {xfer_file cbrowser_xref} {
     set SN_cross_pid ${fd}
     set xref_cancelled 0
     fconfigure ${fd} \
-        -encoding utf-8 \
+        -encoding $sn_options(def,system-encoding) \
         -blocking 0
     fileevent ${fd} readable [list load_xref_pipe ${fd} ${xfer_file}]
 }
@@ -1075,17 +1028,9 @@ proc load_xref_pipe {xreffd xfer_file} {
         sn_log "Cross-ref PIPE: ${line}"
 
         #actualize termometer
-
-        set scanning "Status: Scanning: "
-        if {[string first $scanning ${line}] == 0} {
-            set file [string range $line [string length $scanning] end]
-            xref_termometer_disp $file 0
-        }
-
-        set deleting "Status: Deleting: "
-        if {[string first $deleting ${line}] == 0} {
-            set file [string range $line [string length $deleting] end]
-            xref_termometer_disp $file 1
+        if {[string first "Deleting " ${line}] == 0 || [string first "Scanning\
+          " ${line}] == 0} {
+            xref_termometer_disp ${line}
         }
     }
 
@@ -1123,9 +1068,7 @@ proc sn_update_project_hotlist {} {
         sn_error_dialog ${err}
         return 0
     } else {
-        fconfigure ${hlstfd} \
-            -encoding $sn_options(def,system-encoding) \
-            -blocking 0
+        fconfigure ${hlstfd} -encoding $sn_options(def,system-encoding) -blocking 0
         puts ${hlstfd} [join ${exist_projs} "\n"]
         close ${hlstfd}
     }
@@ -1487,9 +1430,7 @@ proc sn_create_new_project {{import_file ""}} {
 	}
 
 	set fd [open ${import_file}]
-        fconfigure ${fd} \
-            -encoding $sn_options(def,system-encoding) \
-            -blocking 0
+        fconfigure ${fd} -encoding $sn_options(def,system-encoding) -blocking 0
         set files [split [read -nonewline ${fd}] "\n"]
         close ${fd}
 
@@ -1571,20 +1512,6 @@ proc sn_create_new_project {{import_file ""}} {
         return 0
     }
 
-    # Bail out if an import directory does not exist
-    foreach aname [array names sn_newargs "add,*"] {
-        if {$sn_newargs(${aname}) == ""} {
-            continue
-        }
-	# Bail out if import dir does not exist!
-	if {![file isdirectory $sn_newargs(${aname})]} {		     
-	    sn_error_dialog [format [get_indep String UnknownDir]\
-	        $sn_newargs(${aname})]
-	    set ProcessingCancelled 1
-	    return 0
-	}
-    }
-
     #the files are already predefined
     if {$sn_newargs(have-import-file) == "disabled"} {
         if {${answer} == 0} {
@@ -1608,9 +1535,12 @@ proc sn_create_new_project {{import_file ""}} {
                 set i 0
                 set ff ""
                 foreach aname [array names sn_newargs "add,*"] {
-                    if {$sn_newargs(${aname}) == ""} {
+                    if {$sn_newargs(${aname}) == "" || ![file isdirectory\
+                      $sn_newargs(${aname})]} {
+                        #skip unusable directories
                         continue
                     }
+
                     set dir [realpath -pwd $sn_options(sys,project-dir)\
                       $sn_newargs(${aname})]
                     set ffiles [sn_glob -match ${glob_expr}\
@@ -1784,7 +1714,7 @@ proc sn_create_new_project {{import_file ""}} {
     set filenum 0
     set files_without_parser ""
     foreach file ${fil_list} {
-        set type [sn_get_file_type ${file}]
+        set type [file_type_using_suf [file extension ${file}]]
         if {$Parser_Info(${type},BROW) == "" || $Parser_Info(${type},TYPE) ==\
           "others"} {
             lappend files_without_parser ${file}
@@ -1793,11 +1723,6 @@ proc sn_create_new_project {{import_file ""}} {
             incr filenum
         }
     }
-
-    # Make sure that the temporary files are created in the
-    # symbol db directory! this because on some OS's the
-    # temporary directory doesn't have alot of space
-    sn_set_tmp_dir $sn_options(both,db-directory)
 
     #to store xref-info for dbimp
     set xfer_file [sn_tmpFileName]
@@ -1813,13 +1738,18 @@ proc sn_create_new_project {{import_file ""}} {
     #of parsing
     set scale_window [make_scale_window ${filenum} 1]
 
+    #make sure that the temporary files are created in the symbol db\
+      directory!!!
+    #this because on some OS's the temporary directory doesn't have alot of\
+      space
+    sn_set_tmp_dir $sn_options(both,db-directory)
+
     #Now we can start parsers on the source code files
     #reset the project file list, it could be the case that
     #the user breaks parsing where not all files have been
     #added to the project
     set fil_list ""
     set file_types ""
-    set cbrowser_xref 0
     foreach type [array names parserfiles] {
         set files [lsort -dictionary $parserfiles(${type})]
 
@@ -1832,12 +1762,6 @@ proc sn_create_new_project {{import_file ""}} {
 
         set brow_cmd [list ${brow_exec}]
         if {${brow_exec} != "" && ${files} != ""} {
-            # If parsing c/c++ file with cbrowser, pass
-            # a flag to sn_load_xref so that it knows to
-            # use cbrowser2 in the xref gen stage.
-            if {[string first cbrowser $brow_exec] != -1} {
-                set cbrowser_xref 1
-            }
 
             #append macro files to the parser
             set macroflag $Parser_Info(${type},MACRO)
@@ -1898,16 +1822,10 @@ proc sn_create_new_project {{import_file ""}} {
     update idletasks
     update
 
-    # Generate XRef information:
-    #
-    # Note that we delay starting the xref process in the
-    # pipe for a moment so that the symbol browser can
-    # be mapped. This avoids a problem under Windown 95/98
-    # where there is a long pause between the time the
-    # file scanning is done and the symbol browser shows up.
+    #generate Xref information
     if {${xfer_file} != "" && [file exists ${xfer_file}] && [file size\
       ${xfer_file}] > 0} {
-        after 1000 [list sn_load_xref ${xfer_file} ${cbrowser_xref}]
+        after 1000 [list sn_load_xref ${xfer_file}]
     }
 
     catch {paf_db_proj sync}
@@ -1973,9 +1891,7 @@ proc set_project_dir_files {{files ""}} {
     if {[catch {set fd [open ${file_list} "w+"]}]} {
         return
     }
-    fconfigure ${fd} \
-        -encoding $sn_options(def,system-encoding) \
-        -blocking 0
+    fconfigure ${fd} -encoding $sn_options(def,system-encoding) -blocking 0
     puts ${fd} [join ${files} \n]
     close ${fd}
 
@@ -2183,7 +2099,7 @@ proc sn_load_hide_unload_files {dir loadf {hidefiles ""} {unloadf ""} {view\
         set have_xref 0
     }
 
-    #close database files
+    #cloase database files
     db_close_files 0
 
     if {[string compare ${unloadf} ""] != 0 && ! [catch {dbopen del_file\
@@ -2205,9 +2121,7 @@ proc sn_load_hide_unload_files {dir loadf {hidefiles ""} {unloadf ""} {view\
 
         set tmpf [sn_tmpFileName]
         set unloadfd [open ${tmpf} "w+"]
-        fconfigure ${unloadfd} \
-            -encoding utf-8 \
-            -blocking 0
+        fconfigure ${unloadfd} -encoding $sn_options(def,system-encoding) -blocking 0
         foreach f ${unloadf} {
             puts ${unloadfd} "-1;$sn_options(db_del_type);${f}"
         }
@@ -2230,9 +2144,9 @@ proc sn_load_hide_unload_files {dir loadf {hidefiles ""} {unloadf ""} {view\
         }
 
         #  X events must be processed !
-        set unloadfd2 [open "| ${cmd}" r]
+        set unloadfd2 [open "| ${cmd}"]
         fconfigure ${unloadfd2} \
-            -encoding utf-8 \
+            -encoding $sn_options(def,system-encoding) \
             -blocking 0
         fileevent ${unloadfd2} readable [list wait_xref_end ${unloadfd2}\
           X_unload]
@@ -2279,7 +2193,6 @@ proc sn_stop_process {} {
 
 # FIXME: We need to add a kill command to Tcl that will provide a cross platform
 # way to stop a subprocess. This code only works under Unix.
-    sn_log "killing SN_cross_pid \"[pid ${SN_cross_pid}]\""
     catch {exec kill [pid ${SN_cross_pid}]}
     catch {close ${SN_cross_pid}}
     catch {unset SN_cross_pid}
@@ -2848,27 +2761,6 @@ proc sn_set_tmp_dir {tmpdir} {
     set env(tmp) ${tmpdir}
 }
 
-# This proc is used to undo the tmp dir setting done by
-# sn_set_tmp_dir. It will unset any env vars and return
-# what the tmp dir was set to or "" if it was not set.
-
-proc sn_unset_tmp_dir {} {
-    global env tcl_platform
-    if {$tcl_platform(platform) == "windows"} {
-        return
-    }
-    if {![info exists env(TMPDIR)] ||
-        ![info exists env(TMP)] ||
-        ![info exists env(tmp)]} {
-        return
-    }
-    set tmp $env(TMPDIR)
-    unset env(TMPDIR)
-    unset env(TMP)
-    unset env(tmp)
-    return $tmp
-}
-
 #raise the first found symbol browser or multi window
 proc sn_raise_project {} {
 
@@ -3197,9 +3089,7 @@ proc sn_make_delfilelist {files} {
     set fdd_filename [sn_tmpFileName]
 
     set fdd_fd [open ${fdd_filename} "w+"]
-    fconfigure ${fdd_fd} \
-        -encoding utf-8 \
-        -blocking 0
+    fconfigure ${fdd_fd} -encoding $sn_options(def,system-encoding) -blocking 0
 
     foreach fdel ${files} {
         puts ${fdd_fd} [join [paf_db_fil seq -uniq -col [list "2 ;" "3 ;"\
@@ -3293,7 +3183,7 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
             }
 
             if {${pars} == ""} {
-                set type [sn_get_file_type ${f}]
+                set type [file_type_using_suf ${f}]
                 if {${type} == ""} {
                     sn_log "No language type for \"${f}\", use default <others>"
                     set type "others"
@@ -3343,7 +3233,7 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
           ${name}]"
 
         if {${type} == ""} {
-            set type [sn_get_file_type ${name}]
+            set type [file_type_using_suf [file extension ${name}]]
         }
 
         lappend files_changed ${name}
@@ -3448,9 +3338,7 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
     if {${files_to_scan} > 0} {
         set xfer_file [sn_tmpFileName]
         set parsefd [open ${xfer_file} "w+"]
-        fconfigure ${parsefd} \
-            -encoding utf-8 \
-            -blocking 0
+        fconfigure ${parsefd} -encoding $sn_options(def,system-encoding) -blocking 0
 
         sn_log "file symbols for delete are in: ${fdd_filename}"
         puts ${parsefd} "-3;$sn_options(db_del_type);${fdd_filename}"
@@ -3464,8 +3352,6 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
             set scale_window "never_exists"
         }
 
-        set cbrowser_xref 0
-
         #scan language files grouped by there own language
         #type (c++, tcl, java, ....)
         foreach type [array names grouped_files] {
@@ -3475,14 +3361,6 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
             if {${brow_exec} == ""} {
                 continue
             }
-	    
-	    # If parsing c/c++ file with cbrowser, pass
-            # a flag to sn_load_xref so that it knows to
-            # use cbrowser2 in the xref gen stage.
-            if {[string first cbrowser $brow_exec] != -1} {
-                set cbrowser_xref 1
-            }
-	    
             set lfiles [lsort -dictionary $grouped_files(${type})]
 
             set brow_cmd [list ${brow_exec}]
@@ -3542,7 +3420,7 @@ proc sn_parse_uptodate {{files_to_check ""} {disp_win 1}} {
         if {[file size ${xfer_file}] == ${xfer_size}} {
             file delete -- ${xfer_file}
         } else {
-            sn_load_xref ${xfer_file} ${cbrowser_xref}
+            sn_load_xref ${xfer_file}
         }
     }
 
@@ -3610,14 +3488,14 @@ proc event_LoadPipeInput {eventfd sc} {
 	return
     }
 
-    if {[catch {set eof [eof ${eventfd}]} err]} {
+    if {[catch {set res [eof ${eventfd}]} err]} {
         set error 1
     } else {
         set error 0
     }
 
     #the parser crashed
-    if {${error} || ${ProcessingCancelled} || ${eof}} {
+    if {${error} || ${ProcessingCancelled} || ${res}} {
 
 # FIXME : Tcl fails to raise an error
 # during a call to the close command
@@ -3644,18 +3522,10 @@ proc event_LoadPipeInput {eventfd sc} {
     if {[catch {set line [gets ${eventfd}]}]} {
         return
     }
-    
-    if {[string equal $line ""]} {
-        return
-    }
-
-    sn_log -l 2 "Info from pipe: ${line}"
 
     #status lines, ignore them
-    set scanning "Status: Scanning: "
-    set deleting "Status: Deleting: "
-    if {[string first $deleting ${line}] == 0 ||
-            [string first $scanning ${line}] == 0} {
+    if {[string first "Deleting " ${line}] == 0 || [string first "Scanning\
+      " ${line}] == 0} {
         return
     }
 
@@ -3669,20 +3539,14 @@ proc event_LoadPipeInput {eventfd sc} {
 
         catch {fileevent ${eventfd} readable ${ev_fnc}}
     } else {
-        # Check for parse status message from pipe,
-	# format is "Status: Parsing: filename"
-	set header "Status: Parsing: "
-	if {[string first $header $line] == 0} {
-            set fname [string range $line [string length $header] end]
-            set event_LoadPipeInput_last_accessed_file ${fname}
-            display_scale_window ${sc} ${fname}
-	    update idletasks
-	} else {
-	    set ev_fnc [fileevent ${eventfd} readable]
-	    fileevent ${eventfd} readable {}
-	    sn_error_dialog "unrecognized pipe input \"${line}\""
-	    catch {fileevent ${eventfd} readable ${ev_fnc}}
-	}
+        sn_log -l 2 "Info from pipe: ${line}"
+        if {${line} != ""} {
+            #store last accessed file for error handling
+            set event_LoadPipeInput_last_accessed_file ${line}
+
+            display_scale_window ${sc} ${line}
+        }
+        update idletasks
     }
 }
 
@@ -3833,9 +3697,7 @@ proc sn_load_part_files {cmd files xfer_file {sc "never_exists"}} {
     if {[catch {
         set coll [sn_tmpFileName]
         set collfd [open ${coll} "w+"]
-        fconfigure ${collfd} \
-            -encoding $sn_options(def,system-encoding) \
-            -blocking 0
+        fconfigure ${collfd} -encoding $sn_options(def,system-encoding) -blocking 0
         puts ${collfd} [join ${files} "\n"]
         close ${collfd}
 
@@ -3844,9 +3706,7 @@ proc sn_load_part_files {cmd files xfer_file {sc "never_exists"}} {
         if {$sn_options(def,include-locatefiles)} {
             set incl [sn_tmpFileName]
             set incfd [open ${incl} "w+"]
-            fconfigure ${incfd} \
-                -encoding $sn_options(def,system-encoding) \
-                -blocking 0
+            fconfigure ${incfd} -encoding $sn_options(def,system-encoding) -blocking 0
             puts ${incfd} [join $sn_options(include-source-directories) "\n"]
             close ${incfd}
         } else {
@@ -3875,25 +3735,21 @@ proc sn_load_part_files {cmd files xfer_file {sc "never_exists"}} {
     } else {
         set swi $sn_options(sys,parser_switches)
     }
-    lappend cmd -n $sn_options(db_files_prefix) -y ${coll}
+    lappend cmd -n $sn_options(db_files_prefix) -y ${coll} -p ${pipe}
     if {${swi} != ""} {
         eval lappend cmd ${swi}
     }
+    lappend cmd -c $sn_options(def,db_cachesize) -H [info hostname] -P [pid]
 
     #look for the location of included headers
     if {$sn_options(def,include-locatefiles)} {
         lappend cmd -I ${incl}
     }
 
-    # Character set encoding (if non-default), used by a parser when
-    # reading a source file.
+    # Character set encoding (if non-default).
     if {[string compare $sn_options(def,encoding) "iso8859-1"] != 0} {
         lappend cmd -e $sn_options(def,encoding)
     }
-
-    lappend cmd | ${pipe}
-    lappend cmd -c $sn_options(def,db_cachesize) -H [info hostname] -P [pid]
-    lappend cmd $sn_options(db_files_prefix)
 
     sn_log "Parsing command: ${cmd}"
 
@@ -3913,12 +3769,10 @@ proc sn_load_part_files {cmd files xfer_file {sc "never_exists"}} {
         return [sn_ask_continue_parsing]
     }
 
-    # Pipe must be non-blocking or GUI will block on cancel of parse.
-    # Pipe must be in utf-8 mode since output of parsers could
-    # include data that can not be represented in the system encoding.
+    # Pipe must be non-blocking or GUI will block on cancel of parse
 
     fconfigure ${cmdfd} \
-        -encoding utf-8 \
+        -encoding $sn_options(def,system-encoding) \
         -blocking 0
     fileevent ${cmdfd} readable [list event_LoadPipeInput ${cmdfd} ${sc}]
     set pids [pid ${cmdfd}]

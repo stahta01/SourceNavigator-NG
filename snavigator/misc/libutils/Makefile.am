@@ -40,6 +40,5 @@ endif
 
 
 libutils_a_SOURCES = homedir.c mxdefine.h mxfuncs.h \
-longstr.h longstr.c \
 fileutils.h fileutils.c mxlogger.h strs.c $(GETOPT) $(REALPATH)
 

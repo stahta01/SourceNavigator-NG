@@ -22,7 +22,7 @@ HANDLE endEvent;
 void ErrorExit (char *msg)
 { 
     LPVOID lpMsgBuf;
-    DWORD     l;
+    int     l;
 
     CloseHandle(hChildStdinWrDup);
     CloseHandle(hChildStdoutRdDup);

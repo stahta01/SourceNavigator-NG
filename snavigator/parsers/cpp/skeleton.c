@@ -36,7 +36,6 @@ MA 02111-1307, USA.
 #include <stdlib.h>
 #include <tcl.h>
 #include "dbutils.h"
-#include "parser.h"
 
 #ifdef WIN32
 #define  OPEN_MODE   O_RDONLY|O_BINARY
@@ -51,7 +50,7 @@ Tcl_Encoding encoding = NULL;
 extern   int yyfd;
 
 void start_parser(char *fname,int parse_cplpl,FILE *highl_fp,int highlight);
-void MacroReadFile(const char *Filename);
+void MacroReadFile(char *Filename);
 void MacroFreeTable();
 void free_lex_buffers();
 void free_token_buffers();
@@ -69,52 +68,68 @@ static int
 log_symbol_filename(FILE *fp,char *fname)
 {
    char  *outfile = NULL;
-   char  *group;
 
-   if (fname == NULL) {
-       fprintf(stderr, "log_symbol_filename called with NULL filename\n");
-       exit(1);
+   if (fname)
+   {
+      if (yyfd != -1)
+         close(yyfd);
+
+      yyfd = open(fname,OPEN_MODE);
+      if (yyfd == -1)
+      {
+         printf("Error: unable to open file \"%s\",errno: %d\n",
+            fname,errno);
+         fflush(stdout);
+         return 1;
+      }
+   }
+   else
+      yyfd = fileno(stdin);
+
+   if (fname)
+   {
+      char  *group;
+
+      if (highlight)
+      {
+         if (hig_fp)
+         {
+            fclose(hig_fp);
+         }
+
+         outfile = Paf_tempnam(NULL,"hc");
+         if (fp)
+         {
+            fprintf(fp,"%s\n",outfile);
+         }
+
+         hig_fp = fopen(outfile,"w+");
+      }
+      printf("%s\n",fname);
+      fflush(stdout);
+
+      if (parse_cplpl)
+      {
+         group = "c++";
+      }
+      else
+      {
+         group = "c";
+      }
+      put_file(fname,group,outfile);
+   }
+   else
+   {
+      if (highlight)
+      {
+         if (fp)
+            hig_fp = fp;
+         else
+            hig_fp = stdout;
+      }
    }
 
-   if (yyfd != -1)
-       close(yyfd);
-
-   yyfd = open(fname,OPEN_MODE);
-   if (yyfd == -1)
-   {
-       fprintf(stderr, "Error: unable to open file \"%s\",errno: %d\n",
-               fname,errno);
-       return 1;
-   }
-
-   if (highlight)
-   {
-       if (hig_fp)
-       {
-           fclose(hig_fp);
-       }
-
-       outfile = Paf_tempnam(NULL,"hc");
-       if (fp)
-       {
-           fprintf(fp,"%s\n",outfile);
-       }
-
-       hig_fp = fopen(outfile,"w+");
-  }
-  put_status_parsing_file(fname);
-
-  if (parse_cplpl)
-  {
-      group = "c++";
-  }
-  else
-  {
-      group = "c";
-  }
-  put_file(fname,group,outfile);
-
-  return 0;
+   return 0;
 }
 
 int
@@ -125,16 +140,20 @@ main(int argc, char *argv[])
    int   opt;
    char  tmp[MAXPATHLEN];
    char  *fname;
+   char  *pipe_cmd = NULL;
+   char  *cachesize = NULL;
    char  *db_prefix = NULL;
    char  *incl_to_pipe = NULL;
    char  *list_file = NULL;
    char  *include_files = NULL;
    char  *cross_ref_file = NULL;
+   char  *sn_host = NULL;
+   char  *sn_pid = NULL;
 
    /* Character set encoding (as defined by Tcl). */
    Tcl_FindExecutable(argv[0]);
 
-   while((opt = getopt(argc,argv,"e:s:n:hy:I:g:i:ltx:Cr:O:m:")) != EOF)
+   while((opt = getopt(argc,argv,"e:s:n:hy:I:g:p:c:i:ltx:CrH:O:P:m:")) != EOF)
    {
       switch (opt)
       {
@@ -148,7 +167,7 @@ main(int argc, char *argv[])
       case 'e':
 	if ((encoding = Tcl_GetEncoding(NULL, optarg)) == NULL)
 	{
-		fprintf(stderr, "Unable to locate `%s' encoding\n", optarg);
+		printf("Unable to locate `%s' encoding\n", optarg);
 		return 1;
 	}
 	break;
@@ -164,8 +183,24 @@ main(int argc, char *argv[])
          include_files = optarg;
          break;
 
+      case 'p':
+         pipe_cmd = optarg;
+         break;
+
+      case 'c':
+         cachesize = optarg;
+         break;
+
       case 'i':
          incl_to_pipe = optarg;
+         break;
+
+      case 'H':
+         sn_host = optarg;
+         break;
+
+      case 'P':
+         sn_pid = optarg;
          break;
 
       case 'C': /* Parser files as C and not as C++! */
@@ -176,7 +211,7 @@ main(int argc, char *argv[])
          report_local_vars = TRUE;
          break;
 
-      case 'x': /* cross reference file */
+      case 'x': /* cross reference file (ignored) */
          cross_ref_file = optarg;
          break;
 
@@ -199,7 +234,7 @@ main(int argc, char *argv[])
    {
       if (!(cross_ref_fp = fopen(cross_ref_file,"a")))
       {
-         fprintf(stderr, "Error: (open) \"%s, errno: %d\"\n",
+         printf("Error: (open) \"%s, errno: %d\"\n",
             cross_ref_file,errno);
          exit(1);
       }
@@ -207,7 +242,18 @@ main(int argc, char *argv[])
 
    if (optind < argc || list_file)
    {
-      Paf_Pipe_Create(incl_to_pipe);
+      if (pipe_cmd)
+      {
+         if (Paf_Pipe_Create(pipe_cmd,db_prefix,incl_to_pipe,
+            cachesize,sn_host,sn_pid) < 0)
+         {
+            printf("Error: (PIPE) \"%s\",%d\n",pipe_cmd,errno);
+            fflush(stdout);
+            exit(2);
+         }
+      }
+      else
+         Paf_db_init_tables(db_prefix,cachesize,NULL);
 
       if (include_files)
       {
@@ -263,8 +309,11 @@ main(int argc, char *argv[])
    }
    else
    {
-      fprintf(stderr, "-y or file name required\n");
-      exit(1);
+   /* We provide only highlighting for stdin. */
+      if (log_symbol_filename(out_fp,(char *)NULL) == 0)
+      {
+         start_parser(NULL,parse_cplpl,stdout,highlight);
+      }
    }
 
    if (yyfd != -1)
