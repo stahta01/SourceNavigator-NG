@@ -1412,7 +1412,7 @@ TreeTableWidgetCmd(
 {
     register TreeTable *tablePtr = (TreeTable *) clientData;
     register TableItem *itemPtr, *Ptr;
-    register char c, *cmd, *cmd2 = NULL;
+    register char c, *cmd, *cmd2;
     char **strv;
     register int result = TCL_OK;
     register int length;

@@ -51,16 +51,12 @@ MA 02111-1307, USA.
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
-
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
-#if defined(__MSVC__)
+#ifdef __MSVC__
 #define	MAXPATHLEN _MAX_PATH
 typedef	unsigned int pid_t;
-#endif /* __MSVC__ */
-
+#else
+#include <sys/param.h>
+#endif /* WIN32 */
 #define MAIN
 #include "ftnchek.h"
 #include <tcl.h>

@@ -5,16 +5,16 @@ AUTOMAKE_OPTIONS = cygnus
 demosdir = $(datadir)/demos
 
 install-data-local:
-	@$(mkinstalldirs) $(DESTDIR)$(demosdir)
+	@$(mkinstalldirs) $(demosdir)
 	echo CVS > /tmp/sn-install-$$$$ ; \
 	for p in @C_DEMO@ @ASM_DEMO@ @FOR_DEMO@ @COB_DEMO@ @MONOP_DEMO@ @JAV_DEMO@ ; do \
-	  echo "copying $$p to $(DESTDIR)$(demosdir)" ; \
+	  echo "copying $$p to $(demosdir)" ; \
 	  ( \
 	  cd $(srcdir) ; \
 	  $(TAR) -ch$(OLDTARFLAG) -f /tmp/$$p.tar-$$$$ -X /tmp/sn-install-$$$$ $$p ; \
-	  cp /tmp/$$p.tar-$$$$ $(DESTDIR)$(demosdir)/$$p.tar-$$$$ ; \
+	  cp /tmp/$$p.tar-$$$$ $(demosdir)/$$p.tar-$$$$ ; \
 	  rm /tmp/$$p.tar-$$$$ ; \
-	  cd $(DESTDIR)$(demosdir) ; \
+	  cd $(demosdir) ; \
 	  $(TAR) -xf $$p.tar-$$$$ ; \
 	  rm $$p.tar-$$$$ ; \
           ) \

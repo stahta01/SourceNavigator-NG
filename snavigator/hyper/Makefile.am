@@ -31,7 +31,7 @@ if MSVC
 LINK = link -DEBUG $(LDFLAGS) -OUT:$@
 TCL_DIR = 
 else
-LINK = $(PURIFY) $(CC) $(LDFLAGS) -o $@
+LINK = $(PURIFY) $(CC) $(CFLAGS) $(LDFLAGS) -o $@
 endif
 
 HYPER_CFLAGS=@HYPER_CFLAGS@
@@ -81,6 +81,7 @@ $(DBUtilsLib) $(DB_LIBDIR)/libdb.a \
 $(TCL_LIB_FULL_PATH) $(TK_LIB_FULL_PATH) \
 $(ITCL_LIB_FULL_PATH) $(ITK_LIB_FULL_PATH)
 
+
 # Must pass TK_DEFS to these compiles.  This is the easiest (and
 # arguably best) way to let these files correctly use the Tk internal
 # headers.  Of course, they really shouldn't use these headers, but
@@ -89,19 +90,26 @@ $(ITCL_LIB_FULL_PATH) $(ITK_LIB_FULL_PATH)
 tkTreeTable.$(OBJEXT): tkTreeTable.c tkTreeTable.h
 	$(COMPILE) $(TK_DEFS) -c $<
 
-# This target will regenerate .c files from .l files. it
-# must never depend on a timestamp for .l files because
-# this would fail to compile on an end users system that
-# did not have flex installed if the timestamps got hosed
-flexgen:
-	$(LEX) -t > j_high.c $(LFLAGS) -Pjava_highlight_ $(srcdir)/j_high.l
-	$(LEX) -t > py_high.c $(LFLAGS) -Ppy_highlight_ $(srcdir)/py_high.l
-	$(LEX) -t > c_high.c $(LFLAGS) -Pc_highlight_ $(srcdir)/c_high.l
-	$(LEX) -t > ch_high.c $(LFLAGS) -Pch_highlight_ $(srcdir)/ch_high.l
-	$(LEX) -t > tcl_high.c $(LFLAGS) -Ptcl_highlight_ $(srcdir)/tcl_high.l
+j_high.c: j_high.l
+	$(LEX) -t > $@ $(LFLAGS) -Pjava_highlight_ $<
+
+py_high.c: py_high.l
+	$(LEX) -t > $@ $(LFLAGS) -Ppy_highlight_ $<
+
+c_high.c: c_high.l
+	$(LEX) -t > $@ $(LFLAGS) -Pc_highlight_ $<
+
+ch_high.c: ch_high.l
+	$(LEX) -t > $@ $(LFLAGS) -Pch_highlight_ $<
+
+tcl_high.c: tcl_high.l
+	$(LEX) -t > $@ $(LFLAGS) -Ptcl_highlight_ $<
+
+clean-compile:
+	-rm -f j_high.c py_high.c c_high.c ch_high.c tcl_high.c
 
 highlight.$(OBJEXT): highlight.c
-	$(COMPILE) $(TK_DEFS) -DTK_DBGX=\"$(TK_DBGX)\" -c $<
+	$(COMPILE) $(TK_DEFS) -c $<
 
 sninit.$(OBJEXT): sninit.c
 	$(COMPILE) $(TK_DEFS) -c $<
@@ -109,10 +117,6 @@ sninit.$(OBJEXT): sninit.c
 tclfileutils.$(OBJEXT): tclfileutils.c
 	$(COMPILE) $(TK_DEFS) -c $<
 
-# Only use cygpath when compiling with VC++
-
-winMain.obj: win/winMain.c
+winMain.$(OBJEXT): win/winMain.c
 	$(COMPILE) -c `cygpath -w $<`
 
-winMain.o: win/winMain.c
-	$(COMPILE) -c $<

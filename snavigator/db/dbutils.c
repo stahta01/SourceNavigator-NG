@@ -2897,7 +2897,7 @@ get_symbol(char *global_class_name,char *local_class_name,char *name,
 }
 
 void
-Paf_db_init_tables(const char *proj_dir,const char *cache,const char *cross_cache)
+Paf_db_init_tables(char *proj_dir,char *cache,char *cross_cache)
 {
 	if (proj_dir)
 	{
@@ -3223,7 +3223,7 @@ Paf_Pipe_Flush()
 {
 	if (pipe_handle == INVALID_HANDLE_VALUE)
 		return -1;
-#ifdef  WIN32
+#ifdef  __MSVC__
 	return (int)FlushFileBuffers(pipe_handle);
 #else
 	return fflush(pipe_handle);
@@ -3264,11 +3264,7 @@ Paf_Pipe_Write MX_VARARGS_DEF(char *, arg1)
 	char    *fmt;
 	char    tmp[10000];
 	int     len;
-#ifdef WIN32
-	DWORD     cou;
-#else
 	int     cou;
-#endif
 	Tcl_DString utfBuffer;
 
 	if (pipe_handle == INVALID_HANDLE_VALUE)
@@ -3306,7 +3302,7 @@ Paf_Pipe_Write MX_VARARGS_DEF(char *, arg1)
 	return TRUE;
 }
 
-#if defined(__MSVC__) || defined(__MINGW32__)
+#ifdef __MSVC__
 /* This function checks for a process (with pid - proc_id).
    Returns:
         -1 if not there
@@ -3325,12 +3321,12 @@ int kill(pid_t pid, int dummy) /*sn_win32_ping*/
 
         if (hProcess!=NULL)
         {
-        sprintf(debug_str,"Opened process %d.", (int)proc_id);
+        sprintf(debug_str,"Opened process %d.",proc_id);
 /*      MessageBox(NULL,debug_str,"debug InFo",MB_OK);*/
                 /* It's alive! */
                 return 1;
         } else {
-        sprintf(debug_str,"Couldn't opened process %d.", (int)proc_id);
+        sprintf(debug_str,"Couldn't opened process %d.",proc_id);
 /*      MessageBox(NULL,debug_str,"debug InFo",MB_OK);*/
                 /* I think it's dead Jim. */
                 return -1;

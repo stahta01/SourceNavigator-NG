@@ -5,7 +5,7 @@
 # at the root of a clean CVS checkout.
 
 DIR=/share/SN51/dist
-RELEASE=sourcenav-5.2.0
+RELEASE=sourcenav-5.1.2
 RELEASEDIR=$DIR/$RELEASE
 
 if test ! -d tcl || test ! -d tk ; then
@@ -39,6 +39,9 @@ done
 cp -p -R config db itcl libgui snavigator tcl tix tk $RELEASEDIR
 
 cd $RELEASEDIR
+
+# Don't ship broken docs with this release
+rm -rf snavigator/doc
 
 find . -name CVS -exec rm -rf {} \; > /dev/null 2>&1
 find . -name ".#*" -exec rm -f {} \; > /dev/null 2>&1

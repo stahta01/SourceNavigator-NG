@@ -27,9 +27,10 @@ INCLUDES = $(WINFLAGS) -I$(top_srcdir)/misc/libutils -I$(top_srcdir)/hyper \
 		-I$(DB_INCDIR) $(TCLHDIR) -I$(top_srcdir)/misc
 
 if MSVC
-LINK = link -DEBUG $(LDFLAGS) -OUT:$@
+LINK = link -DEBUG $(CFLAGS) $(LDFLAGS) -OUT:$@
 else
-LINK = $(PURIFY) $(CC) $(LDFLAGS) -o $@
+CFLAGS = -Wall
+LINK = $(PURIFY) $(CC) $(CFLAGS) $(LDFLAGS) -o $@
 endif
 
 sdkdir = @SN_SDK_EXEC_PREFIX@/lib
@@ -41,8 +42,8 @@ CPPLibDir=$(top_builddir)/parsers/cpp/cpplib
 CPPLib=$(CPPLibDir)/libcpp2.a
 
 install-data-local:
-	$(INSTALL_DATA) $(top_builddir)/../db/PORT/libdb.a $(DESTDIR)$(sdkdir)/libpafdb.a
-	$(RANLIB) $(DESTDIR)$(sdkdir)/libpafdb.a
+	$(INSTALL_DATA) $(top_builddir)/../db/PORT/libdb.a $(sdkdir)/libpafdb.a
+	$(RANLIB) $(sdkdir)/libpafdb.a
 
 dbcp_SOURCES = dbcp.c
 dbcp_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a
