@@ -77,8 +77,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 ASM_DEMO = @ASM_DEMO@
 ASSEMBLER_DIRS = @ASSEMBLER_DIRS@
 AWK = @AWK@
@@ -91,7 +89,6 @@ COB_DEMO = @COB_DEMO@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CYGPATH = @CYGPATH@
 C_DEMO = @C_DEMO@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
@@ -212,7 +209,7 @@ AUTOMAKE_OPTIONS = cygnus
 
 #bin_SCRIPTS = elix-link snscenario
 bin_SCRIPTS = snscenario
-mkinstalldirs = $(SHELL) $(top_srcdir)/../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../../config.h
 CONFIG_CLEAN_FILES =  snavigator snscenario
 SCRIPTS =  $(bin_SCRIPTS)
@@ -342,7 +339,7 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 install-exec-local: $(bindir)/@SN_LAUNCH_SHELL@
 
 $(bindir)/@SN_LAUNCH_SHELL@: snavigator
-	$(INSTALL_SCRIPT) snavigator $(DESTDIR)$(bindir)/@SN_LAUNCH_SHELL@
+	$(INSTALL_SCRIPT) snavigator $(bindir)/@SN_LAUNCH_SHELL@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

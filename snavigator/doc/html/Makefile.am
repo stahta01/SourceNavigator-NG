@@ -27,18 +27,18 @@ userguidedir = $(htmldir)/userguide
 srchtmldir = $(top_srcdir)/doc/html
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(htmldir)
+	$(mkinstalldirs) $(htmldir)
 	for p in @SN_BOOKS@; do \
-		$(mkinstalldirs) $(DESTDIR)$(htmldir)/$$p; \
-		rm -f $(DESTDIR)$(htmldir)/$$p/*.html; \
-		rm -f $(DESTDIR)$(htmldir)/$$p/*.gif; \
-		echo "copying $$p to $(DESTDIR)$(htmldir)/$$p" ;\
+		$(mkinstalldirs) $(htmldir)/$$p; \
+		rm -f $(htmldir)/$$p/*.html; \
+		rm -f $(htmldir)/$$p/*.gif; \
+		echo "copying $$p to $(htmldir)/$$p" ;\
 		( \
 		cd $(srcdir)/@SN_DOCSET@/$$p ;\
 		$(TAR) -ch$(OLDTARFLAG) -f /tmp/$$p.tar-$$$$ *.html *.gif ;\
-		cp /tmp/$$p.tar-$$$$ $(DESTDIR)$(htmldir)/$$p ;\
+		cp /tmp/$$p.tar-$$$$ $(htmldir)/$$p ;\
 		rm /tmp/$$p.tar-$$$$ ;\
-		cd $(DESTDIR)$(htmldir)/$$p ;\
+		cd $(htmldir)/$$p ;\
 		$(TAR) -xf $$p.tar-$$$$ ;\
 		rm $$p.tar-$$$$ ;\
 		) \

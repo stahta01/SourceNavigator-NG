@@ -77,8 +77,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 ASM_DEMO = @ASM_DEMO@
 ASSEMBLER_DIRS = @ASSEMBLER_DIRS@
 AWK = @AWK@
@@ -91,7 +89,6 @@ COB_DEMO = @COB_DEMO@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CYGPATH = @CYGPATH@
 C_DEMO = @C_DEMO@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
@@ -214,7 +211,7 @@ tcldb_SCRIPTS = call-freq.tk clobber.tcl constants.tcl diamonds.tcl 	        mul
 
 
 tcldb_DATA = README
-mkinstalldirs = $(SHELL) $(top_srcdir)/../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../../../../../config.h
 CONFIG_CLEAN_FILES = 
 SCRIPTS =  $(tcldb_SCRIPTS)

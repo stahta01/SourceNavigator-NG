@@ -54,14 +54,11 @@ MA 02111-1307, USA.
 Tcl_Encoding encoding = NULL;
 
 extern	int	optind;
-
 #ifdef WIN32
-typedef const char	*ARGTYPE;
+extern	const char	*optarg;
 #else
-typedef char	*ARGTYPE;
+extern	char	*optarg;
 #endif /* WIN32 */
-
-extern ARGTYPE	optarg;
 
 extern	char	*filename_g;
 extern	int	yylineno,yycharno;
@@ -255,7 +252,7 @@ check_running(char *lock_file)
  *	-1:			No permission to lock.
  */
 static	int
-create_lock_file(char *lock_file,const char *sn_host,const char *sn_pid)
+create_lock_file(char *lock_file,char *sn_host,char *sn_pid)
 {
 	int	fd;
 	char	status_buf[500];
@@ -433,20 +430,20 @@ main(int argc, char **argv)
 	char	save_c;
 	long	type;
 	int	linenum;
-	ARGTYPE	cache = NULL;
-	ARGTYPE	cross_cache = NULL;
+	char	*cache = NULL;
+	char	*cross_cache = NULL;
 	FILE	*logfp = NULL;
 	FILE	*infp = stdin;
-	ARGTYPE	file = NULL;
+	char	*file = NULL;
 	int	first_xref = TRUE;
 	char	*db_prefix = NULL;
-	ARGTYPE sn_host = NULL;
-	ARGTYPE sn_pid = NULL;
-	ARGTYPE omode = NULL;
+	char	*sn_host = NULL;
+	char	*sn_pid = NULL;
+	char	*omode = NULL;
 	char	lock_file[MAXPATHLEN];
 	int	set_sgns = FALSE;
 	LongString	buf;
-	ARGTYPE macro_file[MAX_MACRO_FILES];
+	char *macro_file[MAX_MACRO_FILES];
 	int macro_file_num = 0;
 
 	LongStringInit(&buf,0);

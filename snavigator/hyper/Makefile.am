@@ -117,10 +117,6 @@ sninit.$(OBJEXT): sninit.c
 tclfileutils.$(OBJEXT): tclfileutils.c
 	$(COMPILE) $(TK_DEFS) -c $<
 
-# Only use cygpath when compiling with VC++
-
-winMain.obj: win/winMain.c
+winMain.$(OBJEXT): win/winMain.c
 	$(COMPILE) -c `cygpath -w $<`
 
-winMain.o: win/winMain.c
-	$(COMPILE) -c $<

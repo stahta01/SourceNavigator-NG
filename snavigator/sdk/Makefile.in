@@ -77,8 +77,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 ASM_DEMO = @ASM_DEMO@
 ASSEMBLER_DIRS = @ASSEMBLER_DIRS@
 AWK = @AWK@
@@ -91,7 +89,6 @@ COB_DEMO = @COB_DEMO@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CYGPATH = @CYGPATH@
 C_DEMO = @C_DEMO@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
@@ -208,10 +205,8 @@ ac_cv_c_itclsh = @ac_cv_c_itclsh@
 
 AUTOMAKE_OPTIONS = cygnus
 
-sdkdir = @SN_SDK_EXEC_PREFIX@/lib
-
 SUBDIRS = api parsers
-mkinstalldirs = $(SHELL) $(top_srcdir)/../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in
@@ -417,7 +412,7 @@ mostlyclean distclean maintainer-clean
 
 
 install-exec-local:
-	$(INSTALL_DATA) @TCL_LIB_FULL_PATH@ $(DESTDIR)$(sdkdir)
+	$(INSTALL_DATA) @TCL_LIB_FULL_PATH@ @SN_SDK_EXEC_PREFIX@/lib
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

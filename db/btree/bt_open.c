@@ -413,13 +413,13 @@ tmp()
 	(void)snprintf(path,
 	    sizeof(path), "%s\\bt.XXXXXX", envtmp ? envtmp : "c:\\tmp");
 
-#ifdef HAVE_MKSTEMP
+#ifndef __MSVC__
 	if ((fd = mkstemp(path)) != -1)
 		(void)unlink(path);
-#else
+#else /* __MSVC__ */
 	if ((fd = _open(_mktemp(path),_O_RDWR|_O_BINARY)) != -1)
 		(void)unlink(path);
-#endif /* HAVE_MKSTEMP */
+#endif /* __MSVC__ */
 	return(fd);
 }
 

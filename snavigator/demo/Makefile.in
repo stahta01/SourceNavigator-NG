@@ -57,8 +57,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 ASM_DEMO = @ASM_DEMO@
 ASSEMBLER_DIRS = @ASSEMBLER_DIRS@
 AWK = @AWK@
@@ -71,7 +69,6 @@ COB_DEMO = @COB_DEMO@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CYGPATH = @CYGPATH@
 C_DEMO = @C_DEMO@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
@@ -189,7 +186,7 @@ ac_cv_c_itclsh = @ac_cv_c_itclsh@
 AUTOMAKE_OPTIONS = cygnus
 
 demosdir = $(datadir)/demos
-mkinstalldirs = $(SHELL) $(top_srcdir)/../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in
@@ -291,16 +288,16 @@ maintainer-clean
 
 
 install-data-local:
-	@$(mkinstalldirs) $(DESTDIR)$(demosdir)
+	@$(mkinstalldirs) $(demosdir)
 	echo CVS > /tmp/sn-install-$$$$ ; \
 	for p in @C_DEMO@ @ASM_DEMO@ @FOR_DEMO@ @COB_DEMO@ @MONOP_DEMO@ @JAV_DEMO@ ; do \
-	  echo "copying $$p to $(DESTDIR)$(demosdir)" ; \
+	  echo "copying $$p to $(demosdir)" ; \
 	  ( \
 	  cd $(srcdir) ; \
 	  $(TAR) -ch$(OLDTARFLAG) -f /tmp/$$p.tar-$$$$ -X /tmp/sn-install-$$$$ $$p ; \
-	  cp /tmp/$$p.tar-$$$$ $(DESTDIR)$(demosdir)/$$p.tar-$$$$ ; \
+	  cp /tmp/$$p.tar-$$$$ $(demosdir)/$$p.tar-$$$$ ; \
 	  rm /tmp/$$p.tar-$$$$ ; \
-	  cd $(DESTDIR)$(demosdir) ; \
+	  cd $(demosdir) ; \
 	  $(TAR) -xf $$p.tar-$$$$ ; \
 	  rm $$p.tar-$$$$ ; \
           ) \

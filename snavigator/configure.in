@@ -4,11 +4,8 @@ dnl Initialization.
 AC_INIT(hyper/sninit.c)
 AC_PREREQ(2.12.2)
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(sn,5.2.0)
+AM_INIT_AUTOMAKE(sn,5.1.2)
 AM_MAINTAINER_MODE
-
-AC_CONFIG_AUX_DIR(..)
-AC_CANONICAL_HOST
 
 dnl Constants.  These _must_ come after the AC_INIT macro invocation.
 
@@ -172,7 +169,7 @@ AC_EXEEXT
 
 AC_OBJEXT
 AC_PROG_AWK
-
+ 
 # Require GNU flex and bison, avoid lex and yacc
 AM_PROG_LEX
 if test "${LEX}" = ""; then
@@ -190,8 +187,9 @@ if test "${YACC}" != "bison -y"; then
     AC_MSG_ERROR([Wrong parser generator found, does bison appear on your path?])
 fi
 
-AC_CHECK_TOOL(RANLIB, ranlib)
-AC_CHECK_TOOL(WINDRES, windres)
+AC_PROG_RANLIB
+WINDRES=${WINDRES-windres}
+AC_SUBST(WINDRES)
 
 dnl Put a plausible default for CC_FOR_BUILD in Makefile.  In the
 dnl normal case, this will just set CC_FOR_BUILD to be CC.  People who
@@ -223,7 +221,7 @@ dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h limits.h malloc.h netinet/in.h search.h strings.h sys/in.h sys/ioctl.h sys/time.h sys/times.h sys/utsname.h sys/param.h termio.h unistd.h stropt.h])
+AC_CHECK_HEADERS([fcntl.h limits.h malloc.h netinet/in.h search.h strings.h sys/in.h sys/ioctl.h sys/time.h sys/utsname.h sys/param.h termio.h unistd.h stropt.h])
 
 #--------------------------------------------------------------------
 #	Supply a substitute for stdlib.h if it doesn't define strtol,
@@ -489,11 +487,8 @@ fi
 ])
 AC_MSG_RESULT(${ac_cv_c_tcl_libdir})
 
-# FIXME: Should use macro from config/ subdir!
-AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
-
-if test "$CYGPATH" != "echo" ; then
-  tmp2="`$CYGPATH $ac_cv_c_tcl_libdir`"
+if test x$ac_win_build = xyes; then
+  tmp2="`cygpath --windows $ac_cv_c_tcl_libdir`"
   TCL_LIBRARY="`echo $tmp2 | sed -e s#\\\\\\\\#/#g`"
 else
   TCL_LIBRARY=$ac_cv_c_tcl_libdir
@@ -510,8 +505,8 @@ fi
 AC_SUBST(HYPER_MAIN)
 
 tmp="`cd $srcdir/gui; pwd`"
-if test "$CYGPATH" != "echo" ; then
-  tmp2="`$CYGPATH $tmp`"
+if test x$ac_win_build = xyes ; then
+  tmp2="`cygpath --windows $tmp`"
   SN_GUI_DIR="`echo $tmp2 | sed -e s#\\\\\\\\#/#g`"
 else
   SN_GUI_DIR=$tmp
@@ -519,9 +514,9 @@ fi
 AC_SUBST(SN_GUI_DIR)
 
 if test x${exec_prefix} = xNONE; then
-  SN_SDK_EXEC_PREFIX='${prefix}/share/sdk'
+  SN_SDK_EXEC_PREFIX=${prefix}/share/sdk
 else
-  SN_SDK_EXEC_PREFIX='${exec_prefix}/sdk'
+  SN_SDK_EXEC_PREFIX=${exec_prefix}/sdk
 fi
 AC_SUBST(SN_SDK_EXEC_PREFIX)
 
@@ -579,8 +574,6 @@ snavigator/unix/Makefile
 snavigator/unix/snavigator
 snavigator/unix/snscenario
 snavigator/win/Makefile
-demo/Makefile
-doc/Makefile
-doc/html/Makefile])
+demo/Makefile])
 
 

@@ -146,7 +146,7 @@ extern "C" {
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_TIMES_H
+#ifndef _MSC_VER
 #include <sys/times.h>
 #endif
 }
@@ -154,7 +154,7 @@ extern "C" {
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_TIMES_H
+#ifndef _MSC_VER
 #include <sys/times.h>
 #endif
 #endif

@@ -77,8 +77,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 ASM_DEMO = @ASM_DEMO@
 ASSEMBLER_DIRS = @ASSEMBLER_DIRS@
 AWK = @AWK@
@@ -91,7 +89,6 @@ COB_DEMO = @COB_DEMO@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-CYGPATH = @CYGPATH@
 C_DEMO = @C_DEMO@
 DB_INCDIR = @DB_INCDIR@
 DB_LIBDIR = @DB_LIBDIR@
@@ -212,7 +209,7 @@ SUBDIRS = database
 
 sdkincludedir = $(datadir)/sdk/include
 sdkinclude_h = db.h cdefs.h
-mkinstalldirs = $(SHELL) $(top_srcdir)/../mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../../../config.h
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in
@@ -418,9 +415,9 @@ mostlyclean distclean maintainer-clean
 
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(sdkincludedir)
+	$(mkinstalldirs) $(sdkincludedir)
 	for h in $(sdkinclude_h) ; do \
-	    cp $(top_srcdir)/../db/include/$$h $(DESTDIR)$(sdkincludedir) ;\
+	    cp $(top_srcdir)/../db/include/$$h $(sdkincludedir) ;\
 	done
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

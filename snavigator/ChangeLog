@@ -1,6 +1,6 @@
 2002-11-26  Mo DeJong  <mdejong@uncounted.org>
 
-        * patches/libgui_print.patch: Add patch
+	* patches/libgui_print.patch: Add patch
 	for libgui that fixes Win32 printing crash.
 
 2002-11-26  Mo DeJong  <mdejong@uncounted.org>
@@ -19,6 +19,21 @@
 
 2002-11-25  Mo DeJong  <mdejong@uncounted.org>
 
+	* Makefile.am: Ignore doc subdir.
+	* Makefile.in: Regen.
+	* README.TXT: Mention sourceforge URL
+ 	for online docs.
+	* configure: Regen.
+	* configure.in: Don't generate Makefiles
+	in doc subdir.
+	* mkdist.sh: Don't copy doc subdir.
+	* gui/multiview.tcl (AddHelpMenu):
+	Open sourceforge online docs. The
+	existing documentation is corrupted
+	so leave them out of the distribution.
+
+2002-11-25  Mo DeJong  <mdejong@uncounted.org>
+
 	* gui/retriever.tcl (destructor, window_deleted):
 	Fixup window deletion by setting the window
 	var to "" when it is deleted by the user.
@@ -28,7 +43,7 @@
 	* configure: Regen.
 	* configure.in:
 	* mkdist.sh: Update version number
-	to 5.2.0.
+	to 5.1.2.
 
 2002-11-24  Mo DeJong  <mdejong@uncounted.org>
 
@@ -58,6 +73,14 @@
 	* parsers/m4/Makefile.am: Add missing backslash.
 	* parsers/m4/Makefile.in: Regen.
 
+2002-11-19  Mo DeJong  <mdejong@uncounted.org>
+
+	* patches/tcl_pascal.patch: Add patch to
+	get rid of crashes that show up under
+	windows when launching emacs. This patch
+	was already added to the CVS but it is
+	needed for the released 5.1 sources.
+
 2002-11-16  Mo DeJong  <mdejong@uncounted.org>
 
 	* gui/editorpane.tcl (m3_post_menu_update):
@@ -80,174 +103,11 @@
 	arguments to Win32 version of kill so they
 	match the Unix implementation.
 
-2002-11-15  Mo DeJong  <mdejong@uncounted.org>
-
-	* db/dbdump.c:
-	* db/dbimp.c:
-	* db/dbutils.c:
-	* db/dbutils.h: 
-	* hyper/dbsym.c:
-	* hyper/sn.h:
-	* hyper/sninit.c:
-	* hyper/tkTreeTable.c:
-	* hyper/win/winMain.c:
-	* parsers/cpp/skeleton.c:
-	* parsers/cpp/cpplib/macread.c:
-	* snavigator/win/winCon.c:
-	Fix compiler warnings by adding casts
-	and consts where needed. Also init some
-	variables that could have been used
-	without an init. No functional changes.
-
-2002-11-15  Mo DeJong  <mdejong@uncounted.org>
-
-	* Makefile.in: Regen.
-	* configure: Regen.
-	* configure.in: Invoke AC_CANONICAL_HOST
-	and AC_CHECK_TOOL so that cross compiling
-	works correctly. Invoke AC_CONFIG_AUX_DIR
-	so configure knows where to look for
-	config.sub and config.guess.
-	* bitmaps/Makefile.in: Regen.
-	* db/Makefile.in: Regen.
-	* demo/Makefile.in: Regen.
-	* doc/Makefile.in: Regen.
-	* doc/html/Makefile.in: Regen.
-	* etc/Makefile.in: Regen.
-	* etc/sn_toolchains/Makefile.in: Regen.
-	* gui/Makefile.in: Regen.
-	* hyper/Makefile.in: Regen.
-	* misc/Makefile.in: Regen.
-	* misc/libutils/Makefile.in: Regen.
-	* packages/Makefile.in: Regen.
-	* parsers/Makefile.in: Regen.
-	* parsers/assembly/Makefile.in: Regen.
-	* parsers/chill/Makefile.in: Regen.
-	* parsers/cobol/Makefile.in: Regen.
-	* parsers/common/Makefile.in: Regen.
-	* parsers/cpp/Makefile.in: Regen.
-	* parsers/cpp/cpplib/Makefile.in: Regen.
-	* parsers/fortran/Makefile.in: Regen.
-	* parsers/gcj/Makefile.in: Regen.
-	* parsers/java/Makefile.in: Regen.
-	* parsers/libjcreuse/Makefile.in: Regen.
-	* parsers/m4/Makefile.in: Regen.
-	* parsers/python/Makefile.in: Regen.
-	* parsers/sendmail/Makefile.in: Regen.
-	* parsers/tcl/Makefile.in: Regen.
-	* parsers/toolbox/Makefile.in: Regen.
-	* sdk/Makefile.in: Regen.
-	* sdk/api/Makefile.in: Regen.
-	* sdk/api/c/Makefile.in: Regen.
-	* sdk/api/c/database/Makefile.in: Regen.
-	* sdk/api/c/database/examples/Makefile.in: Regen.
-	* sdk/api/tcl/Makefile.in: Regen.
-	* sdk/api/tcl/database/Makefile.in: Regen.
-	* sdk/api/tcl/database/examples/Makefile.in: Regen.
-	* sdk/api/tcl/misc/Makefile.in: Regen.
-	* sdk/parsers/Makefile.in: Regen.
-	* sdk/parsers/examples/Makefile.in: Regen.
-	* sdk/parsers/examples/assembly/Makefile.in: Regen.
-	* sdk/parsers/examples/elf/Makefile.in: Regen.
-	* snavigator/Makefile.in: Regen.
-	* snavigator/unix/Makefile.in: Regen.
-	* snavigator/win/Makefile.in: Regen.
-
-2002-11-14  Mo DeJong  <mdejong@uncounted.org>
-
-	* misc/compat.h: Include winsock.h when compiling
-	with mingw to avoid u_char related errors.
-
 2002-11-14  Mo DeJong  <mdejong@uncounted.org>
 
 	* gui/editorpane.tcl (toolbar_grep): Invoke search_grep
 	method from the multiwin parent instead of broken
 	sn_grep procedure. [Bug 610449]
-
-2002-11-13  Mo DeJong  <mdejong@uncounted.org>
-
-	* db/dbutils.c: Use Win32 version of kill()
-	when compiling with VC++ or Mingw.
-	* misc/libutils/fileutils.c: Invert test
-	so that Cygwin specific code is only
-	used when __CYGWIN32__ is defined instead
-	of testing for #ifndef __MSVC__. This
-	fixes the build under Mingw.
-	* parsers/fortran/ftnchek.c: Include
-	sys/param.h when HAVE_SYS_PARAM_H is
-	defined instead of depending on __MSVC__.
-
-2002-11-13  Mo DeJong  <mdejong@uncounted.org>
-
-	* Makefile.in: Regen.
-	* config.h.in: Regen.
-	* bitmaps/Makefile.in: Regen.
-	* db/Makefile.in: Regen.
-	* demo/Makefile.in: Regen.
-	* doc/Makefile.in: Regen.
-	* doc/html/Makefile.in: Regen.
-	* etc/Makefile.in: Regen.
-	* etc/sn_toolchains/Makefile.in: Regen.
-	* gui/Makefile.in: Regen.
-	* hyper/Makefile.am: Add .o target that
-	does not use cygpath to support building
-	with mingw.
-	* hyper/Makefile.in: Regen.
-	* misc/Makefile.in: Regen.
-	* misc/libutils/Makefile.in: Regen.
-	* packages/Makefile.in: Regen.
-	* parsers/Makefile.in: Regen.
-	* parsers/assembly/Makefile.in: Regen.
-	* parsers/chill/Makefile.in: Regen.
-	* parsers/cobol/Makefile.in: Regen.
-	* parsers/common/Makefile.in: Regen.
-	* parsers/cpp/Makefile.in: Regen.
-	* parsers/cpp/cpplib/Makefile.in: Regen.
-	* parsers/fortran/Makefile.in: Regen.
-	* parsers/gcj/Makefile.in: Regen.
-	* parsers/java/Makefile.in: Regen.
-	* parsers/libjcreuse/Makefile.in: Regen.
-	* parsers/m4/Makefile.in: Regen.
-	* parsers/python/Makefile.in: Regen.
-	* parsers/sendmail/Makefile.in: Regen.
-	* parsers/tcl/Makefile.in: Regen.
-	* parsers/toolbox/Makefile.in: Regen.
-	* sdk/Makefile.in: Regen.
-	* sdk/api/Makefile.in: Regen.
-	* sdk/api/c/Makefile.in: Regen.
-	* sdk/api/c/database/Makefile.in: Regen.
-	* sdk/api/c/database/examples/Makefile.in: Regen.
-	* sdk/api/tcl/Makefile.in: Regen.
-	* sdk/api/tcl/database/Makefile.in: Regen.
-	* sdk/api/tcl/database/examples/Makefile.in: Regen.
-	* sdk/api/tcl/misc/Makefile.in: Regen.
-	* sdk/parsers/Makefile.in: Regen.
-	* sdk/parsers/examples/Makefile.in: Regen.
-	* sdk/parsers/examples/assembly/Makefile.in: Regen.
-	* sdk/parsers/examples/elf/Makefile.in: Regen.
-	* snavigator/Makefile.in: Regen.
-	* snavigator/unix/Makefile.in: Regen.
-	* snavigator/win/Makefile.am: Fix incorrectly quoted
-	-D argument to the compiler.
-	* snavigator/win/Makefile.in: Regen.
-
-2002-11-13  Mo DeJong  <mdejong@uncounted.org>
-
-	* configure: Regen.
-	* configure.in: Include sys/times.h in
-	the headers we check for.
-	* parsers/libjcreuse/rSystem.c: Include
-	sys/times.h based on HAVE_SYS_TIMES_H
-	instead of _MSC_VER. This fixes
-	compilation problems under mingw.
-
-2002-11-13  Mo DeJong  <mdejong@uncounted.org>
-
-	* configure: Regen.
-	* configure.in: Check for cygpath and
-	don't attempt path conversions if it
-	is not found. This fix is needed to
-	be able to cross compile for windows.
 
 2002-11-10  Mo DeJong  <mdejong@uncounted.org>
 
@@ -266,12 +126,6 @@
 
 2002-09-13  Mo DeJong  <supermo@bayarea.net>
 
-	* patches/tk_wmwithdraw.patch: Removed
-	patch file since it has been incorporated
-	into the CVS.
-
-2002-09-13  Mo DeJong  <supermo@bayarea.net>
-
 	* gui/editorpane.tcl (make_editor_bindings):
 	Move Editor bindings after instance bindings
 	to avoid a problem with highlighting when
@@ -279,51 +133,18 @@
 	in the wrong order.
 	[Bug 597660]
 
-2002-09-12  Ralf Corsepius  <corsepiu@faw.uni-ulm.de>
+2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	* Makefile.in:
-	* bitmaps/Makefile.am:
-	* bitmaps/Makefile.in:
-	* db/Makefile.am:
-	* db/Makefile.in:
-	* demo/Makefile.am:
-	* demo/Makefile.in:
-	* doc/html/Makefile.am:
-	* doc/html/Makefile.in:
-	* packages/Makefile.am:
-	* packages/Makefile.in:
-	* sdk/Makefile.am:
-	* sdk/Makefile.in:
-	* sdk/api/c/Makefile.am:
-	* sdk/api/c/Makefile.in:
-	* snavigator/unix/Makefile.am:
-	* snavigator/unix/Makefile.in:
-	Prefix install locations with $(DESTDIR) to
-	better support installing into a
-	staging location.
+	Added SN-511-2002-09-11 tag.
 
-2002-09-12  Mo DeJong  <supermo@bayarea.net>
+2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	* gui/classtreepane.tcl:
-	* gui/diff.tcl:
-	* gui/editorpane.tcl:
-	* gui/elix.tcl:
-	* gui/gdbtk.tcl:
-	* gui/multiview.tcl:
-	* gui/preferences.tcl:
-	* gui/printdialog.tcl:
-	* gui/projedit.tcl:
-	* gui/rcs.tcl:
-	* gui/retrieverpane.tcl:
-	* gui/selector.tcl:
-	* gui/tools.tcl:
-	* gui/tree.tcl:
-	* gui/xrefpane.tcl:
-	Replace pointless use of ::set with set.
+	* configure: Regen.
+	* configure.in: Update version to 5.1.1.
 
-2002-09-12  Mo DeJong  <supermo@bayarea.net>
+2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	* mkdist.sh:
+	* mkdist.sh: Update version to 5.1.1.
 	Rework toplevel directory test so it
 	checks for tcl and tk directories.
 	Remove any .rej files from dest dir
@@ -331,19 +152,15 @@
 
 2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	Added SN-511-2002-09-11 tag.
-	
+	* patches/tcl_configure.patch: Undo deletion of
+	configure patch since we do need it
+	to build using tcl module from 5.1.0.
+
 2002-09-05  Mo DeJong  <supermo@bayarea.net>
 
 	* gui/text.tcl (tkTextInsertChar): Sync so that
 	highlighted region is deleted in other editors
 	when a character is typed.
-
-2002-09-04  Chris Drexler  <ckolumbus@users.sourceforge.net>
-
-	* demo/c++_demo/contrib/perl/sample_client:
-	Change hard coded path name of perl so that
-	rpm will not complain at install time.
 
 2002-09-04  Mo DeJong  <supermo@bayarea.net>
 
@@ -351,17 +168,9 @@
 	editors when pasting into a text widget.
 	[Bug 594678]
 
-2002-08-05  Chris Drexler  <ckolumbus@users.sourceforge.net>
-
-	* configure: Regen.
-	* configure.in: Avoid evaluating ${prefix} or
-	${exec_prefix} in variables passed into the
-	Makefiles. This will better support setting
-	the prefix or exec_prefix and install time.
-
 2002-07-30  Mo DeJong  <supermo@bayarea.net>
 
-	* tcl_configure.patch: Remove patch since
+	* patches/tcl_configure.patch: Remove patch since
  	it has been committed to the CVS.
 
 2002-07-30  Mo DeJong  <supermo@bayarea.net>
