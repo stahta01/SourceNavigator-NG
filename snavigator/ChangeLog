@@ -1,63 +1,11 @@
-2002-09-13  Mo DeJong  <supermo@bayarea.net>
+2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	* patches/tk_wmwithdraw.patch: Removed
-	patch file since it has been incorporated
-	into the CVS.
+	* configure: Regen.
+	* configure.in: Update version to 5.1.1.
 
-2002-09-13  Mo DeJong  <supermo@bayarea.net>
+2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	* gui/editorpane.tcl (make_editor_bindings):
-	Move Editor bindings after instance bindings
-	to avoid a problem with highlighting when
-	indenting text when events are processed
-	in the wrong order.
-	[Bug 597660]
-
-2002-09-12  Ralf Corsepius  <corsepiu@faw.uni-ulm.de>
-
-	* Makefile.in:
-	* bitmaps/Makefile.am:
-	* bitmaps/Makefile.in:
-	* db/Makefile.am:
-	* db/Makefile.in:
-	* demo/Makefile.am:
-	* demo/Makefile.in:
-	* doc/html/Makefile.am:
-	* doc/html/Makefile.in:
-	* packages/Makefile.am:
-	* packages/Makefile.in:
-	* sdk/Makefile.am:
-	* sdk/Makefile.in:
-	* sdk/api/c/Makefile.am:
-	* sdk/api/c/Makefile.in:
-	* snavigator/unix/Makefile.am:
-	* snavigator/unix/Makefile.in:
-	Prefix install locations with $(DESTDIR) to
-	better support installing into a
-	staging location.
-
-2002-09-12  Mo DeJong  <supermo@bayarea.net>
-
-	* gui/classtreepane.tcl:
-	* gui/diff.tcl:
-	* gui/editorpane.tcl:
-	* gui/elix.tcl:
-	* gui/gdbtk.tcl:
-	* gui/multiview.tcl:
-	* gui/preferences.tcl:
-	* gui/printdialog.tcl:
-	* gui/projedit.tcl:
-	* gui/rcs.tcl:
-	* gui/retrieverpane.tcl:
-	* gui/selector.tcl:
-	* gui/tools.tcl:
-	* gui/tree.tcl:
-	* gui/xrefpane.tcl:
-	Replace pointless use of ::set with set.
-
-2002-09-12  Mo DeJong  <supermo@bayarea.net>
-
-	* mkdist.sh:
+	* mkdist.sh: Update version to 5.1.1.
 	Rework toplevel directory test so it
 	checks for tcl and tk directories.
 	Remove any .rej files from dest dir
@@ -65,19 +13,15 @@
 
 2002-09-11  Mo DeJong  <supermo@bayarea.net>
 
-	Added SN-511-2002-09-11 tag.
-	
+	* patches/tcl_configure.patch: Undo deletion of
+	configure patch since we do need it
+	to build using tcl module from 5.1.0.
+
 2002-09-05  Mo DeJong  <supermo@bayarea.net>
 
 	* gui/text.tcl (tkTextInsertChar): Sync so that
 	highlighted region is deleted in other editors
 	when a character is typed.
-
-2002-09-04  Chris Drexler  <ckolumbus@users.sourceforge.net>
-
-	* demo/c++_demo/contrib/perl/sample_client:
-	Change hard coded path name of perl so that
-	rpm will not complain at install time.
 
 2002-09-04  Mo DeJong  <supermo@bayarea.net>
 
@@ -85,17 +29,9 @@
 	editors when pasting into a text widget.
 	[Bug 594678]
 
-2002-08-05  Chris Drexler  <ckolumbus@users.sourceforge.net>
-
-	* configure: Regen.
-	* configure.in: Avoid evaluating ${prefix} or
-	${exec_prefix} in variables passed into the
-	Makefiles. This will better support setting
-	the prefix or exec_prefix and install time.
-
 2002-07-30  Mo DeJong  <supermo@bayarea.net>
 
-	* tcl_configure.patch: Remove patch since
+	* patches/tcl_configure.patch: Remove patch since
  	it has been committed to the CVS.
 
 2002-07-30  Mo DeJong  <supermo@bayarea.net>
