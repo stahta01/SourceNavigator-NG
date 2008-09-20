@@ -4,8 +4,7 @@
 #
 # RCS: @(#) $Id$
 
-AC_INIT
-AC_CONFIG_SRCDIR([../generic/tk.h])
+AC_INIT(../generic/tk.h)
 
 TK_VERSION=8.3
 TK_MAJOR_VERSION=8
@@ -53,11 +52,7 @@ AC_PROG_MAKE_SET
 # These two macros perform additinal compiler test.
 #--------------------------------------------------------------------
 
-case $host_os in
-  *cygwin* ) CYGWIN=yes;;
-  * )        CYGWIN=;;
-esac
-
+AC_CYGWIN
 
 case "${host}" in
 *-*-cygwin*)
@@ -273,5 +268,4 @@ AC_SUBST(MAKE_EXE)
 AC_SUBST(TK_XINCLUDES)
 AC_SUBST(XINCLUDES)
 
-AC_CONFIG_FILES([Makefile tkConfig.sh])
-AC_OUTPUT
+AC_OUTPUT(Makefile tkConfig.sh)

@@ -976,7 +976,7 @@ proc sn_tcl_tk_init {} {
     set sn_options(def,system-encoding) $sn_options(def,encoding)
 
     #read language dependent file
-    sn_log "Loading language file: [file join $sn_path(etcdir)\
+    sn_log "Text file: [file join $sn_path(etcdir)\
       $sn_options(def,language).txt]"
     sn_string_init [file join $sn_path(etcdir) $sn_options(def,language).txt]
 
@@ -1184,13 +1184,6 @@ proc sn_read_commandline_arguments {} {
             "-x" {
                     set sn_options(both,xref-create) ""
                 }
-	    "-U" {
-	     	# just unlock the .proj file and exit
-		incr idx
-		set file [lindex ${argv} ${idx}]
-		puts "forcing project unlocking of ${file}"
-		exit [sn_project_force_unlock ${file}]
-	    }
             "--nosplash" {
                     set sn_arguments(nosplash) 1
                 }
@@ -1231,7 +1224,6 @@ proc sn_read_commandline_arguments {} {
                        default is (SNDB4)
     -i, --import       imports the project list from a file
     -x, --noxref       disables creating cross-reference information
-    -U <file>          force unlocking of project file <file> 
 
     -o, --avail-options         lists all availiable options for -D
     -D, --define option=value   Defines an option, see \"--avail-options\"
