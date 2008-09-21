@@ -32,7 +32,7 @@ MA 02111-1307, USA.
 #include "mxdefine.h"
 #include "mxfuncs.h"
 
-#include "db_185.h"
+#include "db.h"
 #include "sn.h"
 #include "tcl.h"
 

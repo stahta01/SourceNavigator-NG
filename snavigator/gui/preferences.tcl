@@ -576,7 +576,8 @@ itcl_class Preferences& {
         pack ${tabspaces} -side top -anchor nw
 
         #more toolbar buttons
-        set sn_options(opt_def,edit-more-buttons) $sn_options(def,edit-more-buttons)
+        set sn_options(opt_def,edit-more-buttons)\
+          $sn_options(def,edit-more-buttons)
         set morebtns ${win}.morebtns
         CheckButton& ${morebtns} \
           -labels [list ""] \
@@ -587,19 +588,9 @@ itcl_class Preferences& {
           -balloons [list [get_indep String MoreEditorToolbarButtonsINFO]]
         pack ${morebtns} -side top -anchor nw
 
-        # External editor settings
-        set sn_options(opt_def,edit-external-always) $sn_options(def,edit-external-always)
-	set extedit_always ${win}.extedit_always
-	CheckButton& ${extedit_always} \
-          -labels [list ""] \
-          -variables sn_options(opt_def,edit-external-always) \
-          -label [get_indep String ExternalEditorAlways] \
-          -labelunderline [get_indep Pos ExternalEditorAlways] \
-          -labelwidth 35 \
-          -balloons [list [get_indep String ExternalEditorAlways]]
-        pack ${extedit_always} -side top -anchor nw
-	  
-        set sn_options(opt_def,edit-external-editor) $sn_options(def,edit-external-editor)
+        #External editor for all files
+        set sn_options(opt_def,edit-external-editor)\
+          $sn_options(def,edit-external-editor)
         set extedit ${win}.extedit
         LabelEntryButton& ${extedit} \
           -text [get_indep String ExternalEditor] \
@@ -1042,11 +1033,11 @@ itcl_class Preferences& {
           $sn_options(def,include-locatefiles)
         set lookforinc ${win}.lookforinc
         CheckButton& ${lookforinc} \
-          -labels [list ""] \
-          -variables sn_options(opt_def,include-locatefiles) \
-          -label [get_indep String LocateIncludeFiles] \
+          -labels [list [get_indep String LocateIncludeFiles]] \
           -underlines [list [get_indep Pos LocateIncludeFiles]] \
+          -variables sn_options(opt_def,include-locatefiles) \
           -balloons [list [get_indep String LocateIncludeFilesINFO]] \
+          -label "" \
           -labelwidth 35
         pack ${lookforinc} -side top -anchor nw
 
@@ -1775,7 +1766,6 @@ itcl_class Preferences& {
             verify_set def,edit-tab-inserts-spaces trap1 1
             verify_set def,edit-file-translation trap1 1
             verify_set def,edit-external-editor trap1 1
-	    verify_set def,edit-external-always trap1 1
         }
 
         #options for hierarchy
@@ -2113,7 +2103,7 @@ itcl_class Preferences& {
               -key sn_sym_dir]
         }
         if {$sn_options(both,db-directory) == ""} {
-            set sn_options(both,db-directory) "SNDB4"
+            set sn_options(both,db-directory) ".snprj"
         }
 
         #check project name (title)
@@ -2138,7 +2128,7 @@ itcl_class Preferences& {
         global sn_options env tcl_platform
 
         if {$sn_options(both,db-directory) == ""} {
-            set sn_options(both,db-directory) "SNDB4"
+            set sn_options(both,db-directory) ".snprj"
         }
 
         #Convert the name into a native name related to the OS, so

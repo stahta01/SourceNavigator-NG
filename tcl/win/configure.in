@@ -4,8 +4,7 @@
 #
 # RCS: @(#) $Id$
 
-AC_INIT
-AC_CONFIG_SRCDIR([../generic/tcl.h])
+AC_INIT(../generic/tcl.h)
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
@@ -53,10 +52,7 @@ AC_PROG_MAKE_SET
 # These two macros perform additional compiler test.
 #--------------------------------------------------------------------
 
-case $host_os in
-  *cygwin* ) CYGWIN=yes;;
-  * )        CYGWIN=;;
-esac
+AC_CYGWIN
 
 case "${host}" in
 *-*-cygwin*)
@@ -81,7 +77,7 @@ AC_EXEEXT
 
 AC_CACHE_CHECK(for SEH support in compiler,
     tcl_cv_seh,
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_TRY_RUN([
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
@@ -96,7 +92,10 @@ int main(int argc, char** argv) {
     }
     return 1;
 }
-]])],[tcl_cv_seh=yes],[tcl_cv_seh=no],[tcl_cv_seh=no])
+],
+        tcl_cv_seh=yes,
+        tcl_cv_seh=no,
+        tcl_cv_seh=no)
 )
 if test "$tcl_cv_seh" = "no" ; then
     AC_DEFINE(HAVE_NO_SEH, 1,
@@ -111,13 +110,16 @@ fi
 #
 AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
     tcl_cv_eh_disposition,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_TRY_COMPILE([
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-]], [[
+],
+[
   EXCEPTION_DISPOSITION x;
-]])],[tcl_cv_eh_disposition=yes],[tcl_cv_eh_disposition=no])
+],
+        tcl_cv_eh_disposition=yes,
+        tcl_cv_eh_disposition=no)
 )
 if test "$tcl_cv_eh_disposition" = "no" ; then
     AC_DEFINE(EXCEPTION_DISPOSITION, int,
@@ -136,14 +138,17 @@ fi
 
 AC_CACHE_CHECK(for alloca declaration in malloc.h,
     tcl_cv_malloc_decl_alloca,
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_TRY_COMPILE([
 #include <malloc.h>
-]], [[
+],
+[
   size_t arg = 0;
   void* ptr;
   ptr = alloca;
   ptr = alloca(arg);
-]])],[tcl_cv_malloc_decl_alloca=yes],[tcl_cv_malloc_decl_alloca=no])
+],
+        tcl_cv_malloc_decl_alloca=yes,
+        tcl_cv_malloc_decl_alloca=no)
 )
 if test "$tcl_cv_malloc_decl_alloca" = "no" &&
    test "${GCC}" = "yes" ; then
@@ -340,6 +345,5 @@ AC_SUBST(POST_MAKE_LIB)
 AC_SUBST(MAKE_DLL)
 AC_SUBST(MAKE_EXE)
 
-AC_CONFIG_FILES([Makefile tclConfig.sh tcl.hpj])
-AC_OUTPUT
+AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)
 

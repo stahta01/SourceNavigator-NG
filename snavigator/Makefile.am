@@ -25,7 +25,7 @@ SUBDIRS = misc db @SDK_DIR@ packages parsers hyper gui demo doc etc \
 snavigator bitmaps
 
 install-exec-local:
-	$(INSTALL) -m 0444 $(top_srcdir)/../COPYING $(DESTDIR)$(prefix)
+	$(INSTALL) $(top_srcdir)/../COPYING $(DESTDIR)$(prefix)
 	(cd ../tcl; $(MAKE) install-libraries)
 	(cd ../tk; $(MAKE) install-libraries)
 	(cd ../tix; $(MAKE) install-libraries)
@@ -34,13 +34,13 @@ install-exec-local:
 
 rootdir = $(prefix)
 
-root_DATA = ../README
+root_DATA = README.TXT INSTALL.TXT NEWS
 
 EXTRA_DIST = $(DATA)
 
 flexgen:
 	cd hyper ; $(MAKE) flexgen
-	cd parsers/assembly ; $(MAKE) flexgen
+	cd parsers/assembly/ppc601-eabi ; $(MAKE) flexgen
 	cd parsers/chill ; $(MAKE) flexgen
 	cd parsers/m4 ; $(MAKE) flexgen
 	cd parsers/python ; $(MAKE) flexgen

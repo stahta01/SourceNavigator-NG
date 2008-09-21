@@ -310,7 +310,7 @@ proc sn_init_globals {} {
 
         #project settings
         #export database directory to be not empty.
-        sn_add_option both db-directory "SNDB4" string
+        sn_add_option both db-directory ".snprj" string
         #export project-readonly flag
         sn_add_option "" readonly no logical
         set sn_options(project_extensions) [list [list {Project files}\
@@ -334,8 +334,8 @@ proc sn_init_globals {} {
         set sn_options(both,others-read) 0
         set sn_options(both,others-write) 0
         set sn_options(both,create-comment-db) ""
-        set sn_options(def,db_cachesize) 2048
-        set sn_options(def,xref-db-cachesize) 8192
+        set sn_options(def,db_cachesize) 300
+        set sn_options(def,xref-db-cachesize) 3000
         sn_add_option def refresh-project "0" "logical"
 
         #parser switches to use.
@@ -431,7 +431,6 @@ proc sn_init_globals {} {
 
         #text editor
         #external editor
-	set sn_options(def,edit-external-always) 0
         set sn_options(def,edit-external-editor) ""
         set sn_options(noname_file) "(noname)"
         if {$tcl_platform(platform) == "windows"} {
@@ -976,7 +975,7 @@ proc sn_tcl_tk_init {} {
     set sn_options(def,system-encoding) $sn_options(def,encoding)
 
     #read language dependent file
-    sn_log "Loading language file: [file join $sn_path(etcdir)\
+    sn_log "Text file: [file join $sn_path(etcdir)\
       $sn_options(def,language).txt]"
     sn_string_init [file join $sn_path(etcdir) $sn_options(def,language).txt]
 
@@ -1184,13 +1183,6 @@ proc sn_read_commandline_arguments {} {
             "-x" {
                     set sn_options(both,xref-create) ""
                 }
-	    "-U" {
-	     	# just unlock the .proj file and exit
-		incr idx
-		set file [lindex ${argv} ${idx}]
-		puts "forcing project unlocking of ${file}"
-		exit [sn_project_force_unlock ${file}]
-	    }
             "--nosplash" {
                     set sn_arguments(nosplash) 1
                 }
@@ -1222,25 +1214,21 @@ proc sn_read_commandline_arguments {} {
                 }
             "--help" -
             "-h" {
-                    set sn_arguments(help) "Source Navigator - command line options
-		    
-    -b, --batchmode    create a new project using batch mode
-    -c, --create       creates a new project
-    -p, --projectname  specifies the name for a new project
-    -d, --databasedir  specifies the directory to store the project databases
-                       default is (SNDB4)
-    -i, --import       imports the project list from a file
-    -x, --noxref       disables creating cross-reference information
-    -U <file>          force unlocking of project file <file> 
-
-    -o, --avail-options         lists all availiable options for -D
-    -D, --define option=value   Defines an option, see \"--avail-options\"
-
-    --nosplash         disables splash screen
-    --debug <value>    enables debugging mode with verboseness <value>
-    --home             installation directory
-    
-    -h, -help          show tcl/tk options"
+                    set sn_arguments(help) "valid parameters:
+    -b, --batchmode:   create a new project using batch mode
+    -p, --projectname: specifies the name for a new project
+    -c, --create:      creates a new project
+    -d, --databasedir: specifies the directory to store the project databases
+                       default is (.snprj)
+    -i, --import:      imports the project list from a file
+    -x, --noxref:      disables creating cross-reference information
+    -o, --avail-options: lists all availiable options that can be set using\
+                      \"--define\"
+    -D, --define option=value
+                       Defines an option, see \"--avail-options\"
+    --nosplash:        disables splash screen
+    --debug:           enables debugging mode
+    --home:            installation directory"
 
                     break
                 }

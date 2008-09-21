@@ -484,6 +484,7 @@ itcl::class Editor& {
 	} else {
 	    set state "normal"
 	}
+
 	${m} add command \
 	    -label [get_indep String EditCut] \
 	    -underline [get_indep Pos EditCut] \
@@ -513,19 +514,10 @@ itcl::class Editor& {
 	    -accelerator "Ctrl+V" \
 	    -command "${this} Paste" \
 	    -state ${state}
-	
-	# NOT YET: external editor
-	#${m} add separator
-	#    -accelerator "Ctrl+U" \
-
-	${m} add command \
-	    -label [get_indep String ExternalEditorOpenIn] \
-	    -underline 2 \
-	    -command "${this} open_external_editor" \
-	    -state "normal"
-	${m} add separator
 
 	# Text sensitive commands, (Retriever, Views).
+	${m} add separator
+
 	AddRetrieveMenu ${m} ${this} $itk_component(editor) ${x} ${y}
     }
 
@@ -814,115 +806,6 @@ itcl::class Editor& {
 	# NOBODY asks us to translate previous blanks to tabs when
 	# the user inserts a TAB.
 	return
-    }
-
-    # this function opens the external editor
-    # try to catch the saving / exiting and relaunch parsing
-    method open_external_editor {{line ""} {search 1}} {
-#        global sn_options
-#        set gvim "gvim"
-#        set gvimfile $itk_option(-filename)
-#        lappend gvim $itk_option(-filename)
-#        #append gvim "<" $sn_options(def,null_dev)
-#        sn_log "Editor command: ${gvim}"
-#        set fd [open "| ${gvim}"]
-#        fconfigure ${fd} \
-#        -encoding $sn_options(def,system-encoding) \
-#        -blocking 0
-#
-#        #wait until the contents are read,
-#        #some times the executed program is so fast, that the
-#        #following command failes.
-#        catch {fileevent ${fd} readable "wait_editor_end ${fd}"}
-#        after 500
-#        return ""
-	global sn_options
-	global tkeWinNumber sn_debug
-	set state "normal"
-	set external_editor ""
-	set w $itk_component(editor)
-	set line [${w} index insert]
-
-	# convert first the file name to be edited to a project-related name
-	set file $itk_option(-filename)
-	set file [sn_convert_FileName ${file}]
-
-	# make sure we stay in project directory (different interpreters)
-	catch {cd $sn_options(sys,project-dir)}
-
-	# check if we have a read-only project
-	if {${state} == ""} {
-	    if {$sn_options(readonly)} {
-		set state disabled
-	    } else {
-		set state normal
-	    }
-	}
-
-	# verify if the default external editor is not empty
-	if {${external_editor} == ""} {
-	    set external_editor $sn_options(def,edit-external-editor)
-	}
-
-	set external_editor [sn_filecmd format -internal ${external_editor}]
-	
-	# use external editor
-	if {${external_editor} != ""} {
-	    if {[regexp "(emacs|gnuclient)" ${external_editor}]} {
-		if {[string compare ${line} ""] == 0} {
-		    set line 1.0
-		}
-		sn_start_emacs ${file} ${line} ${state} ${external_editor}
-	    } else {
-		if {${line} == ""} {
-		    set line 1
-		    set col 0
-		} else {
-		    set line [trim_text_index ${line}]
-		    set pos [split ${line} {.}]
-		    set line [lindex ${pos} 0]
-		    set col [lindex ${pos} 1]
-		}
-
-		regsub -all {%l} ${external_editor} ${line} external_editor
-		regsub -all {%c} ${external_editor} ${col} external_editor
-		regsub -all {%i} ${external_editor} [tk appname] external_editor
-		regsub -all {%d} ${external_editor} $sn_options(sys,project-dir) external_editor
-
-		if {![regsub \
-		    -all {%f} ${external_editor} ${file} external_editor]} {
-		    lappend external_editor ${file}
-		}
-
-		# this is a vim'ism to position the cursor
-	        if {[regexp "(vim)" ${external_editor}]} {
-                    lappend external_editor "+call cursor($line,$col)"
-	        }
-		
-		# terminate with (usually) "<cmd> < /dev/null"
-		lappend external_editor "<" $sn_options(def,null_dev)
-		
-		#puts "external editor is $external_editor"
-		sn_log "Editor command: ${external_editor}"
-
-		#read the contents into editor in the background
-		set fd [open "| ${external_editor}"]
-		fconfigure ${fd} \
-		    -encoding $sn_options(def,system-encoding) \
-		    -blocking 0
-
-		#wait until the contents are readed,
-		#some times the executed program is so fast, that the
-		#following command failes.
-		catch {fileevent ${fd} readable "wait_editor_end ${fd}"}
-		after 500
-		# FIXME : This will block the GUI for 0.5 sec, that is not acceptable
-	    }
-	    return ""
-	} else {
-		# raise error that there is no editor defined
-		tk_dialog auto [get_indep String ExternalEditor] [get_indep String ExternalEditorNotDefined] question_image 0 [get_indep String ok]
-	}
     }
 
     method Undo {} {
@@ -2302,11 +2185,11 @@ itcl::class Editor& {
 	    set external_editor $sn_options(def,edit-external-editor)
 	}
 
-	set external_editor [sn_filecmd format -internal ${external_editor}]
-	set external_always $sn_options(def,edit-external-always)
+	set external_editor [sn_filecmd format \
+	    -internal ${external_editor}]
 
-	# use external editor only of pref says so
-	if {${external_always} != 0} {
+	#use external Editor !
+	if {${external_editor} != ""} {
 	    if {[regexp "(emacs|gnuclient)" ${external_editor}]} {
 		if {[string compare ${line} ""] == 0} {
 		    set line 1.0

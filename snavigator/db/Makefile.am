@@ -22,7 +22,7 @@ AUTOMAKE_OPTIONS = cygnus
 ## Process this file with automake to create Makefile.in.
 
 INCLUDES = $(WINFLAGS) -I$(top_srcdir)/misc/libutils -I$(top_srcdir)/hyper \
-		-I$(DB_INCDIR) -I$(DB_LIBDIR) $(TCLHDIR) -I$(top_srcdir)/misc
+		-I$(DB_INCDIR) $(TCLHDIR) -I$(top_srcdir)/misc
 
 if MSVC
 LINK = link -DEBUG $(LDFLAGS) -OUT:$@
@@ -33,33 +33,37 @@ endif
 sdkdir = @SN_SDK_EXEC_PREFIX@/lib
 
 bin_PROGRAMS = dbcp dbdump dbimp
-sdk_LIBRARIES = libdbutils.a
+sdk_LIBRARIES = libdbutils.a libdbckalloc.a
 
 install-data-local:
-	$(INSTALL_DATA) $(top_builddir)/../db4/PORT/libdb.a $(DESTDIR)$(sdkdir)
-	$(RANLIB) $(DESTDIR)$(sdkdir)/libdb.a
+	$(INSTALL_DATA) $(top_builddir)/../db/PORT/libdb.a $(DESTDIR)$(sdkdir)/libpafdb.a
+	$(RANLIB) $(DESTDIR)$(sdkdir)/libpafdb.a
 
 dbcp_SOURCES = dbcp.c
-dbcp_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a
-dbcp_DEPENDENCIES = libdbutils.a $(DB_LIBDIR)/libdb.a
+dbcp_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a $(DB_LIBDIR)/libdbmalloc.a
+dbcp_DEPENDENCIES = libdbutils.a $(DB_LIBDIR)/libdb.a $(DB_LIBDIR)/libdbmalloc.a
 
 dbdump_SOURCES = dbdump.c
 dbdump_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a \
+		$(DB_LIBDIR)/libdbmalloc.a \
 		$(top_builddir)/misc/libutils/libutils.a $(TCL_BUILD_LIB_SPEC) $(TCL_LIBS)
 dbdump_DEPENDENCIES = libdbutils.a $(DB_LIBDIR)/libdb.a \
+		$(DB_LIBDIR)/libdbmalloc.a \
 		$(top_builddir)/misc/libutils/libutils.a
 
 dbimp_SOURCES = dbimp.c
 if MSVC
-dbimp_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a \
+dbimp_LDADD = libdbutils.a $(DB_LIBDIR)/libdb.a libdbckalloc.a \
 		$(top_builddir)/misc/libutils/libutils.a \
 		$(TCL_BUILD_LIB_SPEC) $(TCL_LIBS) wsock32.lib
 else
-dbimp_LDADD = -L. -ldbutils -L$(DB_LIBDIR) -ldb \
+dbimp_LDADD = -L. -ldbutils -L$(DB_LIBDIR) -ldb -ldbckalloc \
 		$(top_builddir)/misc/libutils/libutils.a \
 		$(TCL_BUILD_LIB_SPEC) $(TCL_LIBS) @SOCKLIB@
 endif
 dbimp_DEPENDENCIES = libdbutils.a $(DB_LIBDIR)/libdb.a \
+		libdbckalloc.a \
 		$(top_builddir)/misc/libutils/libutils.a
 
 libdbutils_a_SOURCES = dbutils.c dbutils.h
+libdbckalloc_a_SOURCES = dbckalloc.c

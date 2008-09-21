@@ -36,7 +36,7 @@ MA 02111-1307, USA.
 
 #include <compat.h>
 
-#include "db_185.h"
+#include "db.h"
 
 
 int

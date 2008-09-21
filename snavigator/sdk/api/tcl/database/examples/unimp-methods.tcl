@@ -38,7 +38,7 @@ if {${argc} != 2} {
     exit
 }
 
-set projdir [lindex ${argv} 0]/SNDB4
+set projdir [lindex ${argv} 0]/.snprj
 set projname [lindex ${argv} 1]
 
 proc mangle {returntype class name args} {

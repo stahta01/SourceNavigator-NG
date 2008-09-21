@@ -351,8 +351,7 @@ proc sn_load_pixmaps {} {
         image create ${pixmap} prev_image -file ${bitd}/prev.${xpm}
 
         # Company logo
-        #image create ${pixmap} company_image -file ${bitd}/shadowman.${xpm}
-        image create photo company_image -file ${bitd}/sn_logo.gif -palette 0/0/8
+        image create ${pixmap} company_image -file ${bitd}/shadowman.${xpm}
 
         #images for the new treetable
         image create ${pixmap} plus_image -file ${bitd}/plus.${xpm}

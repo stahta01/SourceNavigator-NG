@@ -31,18 +31,18 @@ del.xpm delall.xpm \
 down.xpm editor.xbm enabled.xbm \
 file.xbm files.xpm find.xpm folder.xbm function.xpm \
 go.xpm goto.xpm grep.xpm \
-info.xpm insert.xpm \
+ide_icon.xpm info.xpm insert.xpm \
 join.xpm \
-left.xpm \
+left.xpm hourglass.gif \
 method.xpm minus.xbm move.xpm new.xpm next.xpm \
 open.xpm paste.xpm plus.xbm print.xpm project.xpm \
 question.xpm \
-rarrow.xpm rebuild.xpm right.xpm \
+rarrow.xpm rebuild.xpm right.xpm shadowman.xpm \
 save.xpm search.xpm sign.xpm stop.xpm stree.xpm \
 trace.xpm tree.xpm \
 undef.xbm undo.xpm up.xpm \
 waste.xpm watch.xpm where.xpm \
-sn-text.gif \
+sn-text.gif cygsol.gif cygcont.gif \
 boxes.xpm clsbr.xpm clsbr_+-.xpm clsbr_+.xpm clsbr_-.xpm clsbr_p+-.xpm \
 clsbr_p+.xpm clsbr_p-.xpm clsbr_p.xpm clsbr_pv+-.xpm clsbr_pv+.xpm \
 clsbr_pv-.xpm clsbr_pv.xpm clsbr_s.xpm clsbr_v+-.xpm clsbr_v+.xpm \
@@ -60,9 +60,9 @@ type_su.xpm parent.xpm filter.xpm \
 next2.xpm prev.xpm include.xpm \
 file_b.xpm file_s.xpm file_+.xpm file_-.xpm dir_+.xpm dir_-.xpm file_h.xpm \
 file_d.xpm unknown.xpm \
-play.xpm rplay.xpm sourcenav.ico sn_logo.gif \
-splashsn.gif splashsn0.gif splashsn1.gif splashsn2.gif splashsn3.gif
+play.xpm rplay.xpm sourcenav.ico
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(imagedir)
+	$(INSTALL_DATA) $(srcdir)/@SPLASHFILE@ $(DESTDIR)$(imagedir)/splash.gif
 	$(INSTALL_DATA) $(srcdir)/@X11ICON@ $(DESTDIR)$(imagedir)/paf.xbm
