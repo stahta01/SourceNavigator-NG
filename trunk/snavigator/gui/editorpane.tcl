@@ -865,6 +865,11 @@ itcl::class Editor& {
 	}
 
 	set external_editor [sn_filecmd format -internal ${external_editor}]
+
+	# deal with whitespace
+	if {[regexp " " ${external_editor}]} {
+		set external_editor "\"$external_editor\""
+	}
 	
 	# use external editor
 	if {${external_editor} != ""} {
