@@ -550,6 +550,7 @@ proc sn_init_globals {} {
         set sn_options(both,xref-locals) ""
         set sn_options(def,xref-font) $sn_options(def,default-font)
         set sn_options(def,xref-branch-font) $sn_options(def,default-font)
+	set sn_options(def,xref-skip) 0
 
         #left to right
         set sn_options(def,xref-disp-order) 0
@@ -1184,6 +1185,7 @@ proc sn_read_commandline_arguments {} {
             "--noxref" -
             "-x" {
                     set sn_options(both,xref-create) ""
+		    set sn_options(def,xref-skip) 1
                 }
 	    "-U" {
 	     	# just unlock the .proj file and exit

@@ -1951,6 +1951,12 @@ proc sn_create_new_project {{import_file ""}} {
     # without creating the xref tables. (reason?)
     # Therefore, I removed it again (Bart Van Rompaey - 
     # bart.vanrompaey2@ua.ac.be)
+    
+    # quick fix: dont build xref when cmdline says so
+    if {$sn_options(def,xref-skip)} {
+    	set xfer_file ""
+    }
+    
     if {${xfer_file} != "" && [file exists ${xfer_file}] && [file size\
       ${xfer_file}] > 0} {
         #after 1000 [list sn_load_xref ${xfer_file} ${cbrowser_xref}]
