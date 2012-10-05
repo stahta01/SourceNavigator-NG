@@ -720,8 +720,7 @@ run_application(int argc,char *argv[])
 int
 main(int argc,char **argv)
 {
-      run_application(argc,argv);
-      return 0;               /* Needed only to prevent compiler warning. */
+      return run_application(argc,argv);
 }
 #endif /* !_WINDOWS */
 
