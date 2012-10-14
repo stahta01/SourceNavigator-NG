@@ -1,3 +1,12 @@
+Release NG4.5 (Sun Oct 14 09:39:57 CEST 2012)
+
+(ENHANCE) Add new function to sn.el for direct jump to implementation
+(ENHANCE) Add Bernd Kiefer to CONTRIBUTORS
+(BUGFIX) Fix external_editor to deal with space in path under win32, part II
+(BUGFIX) Fix --noxref to actually not build and xref information
+(BUGFIX) Fix return code of main() call chain
+
+
 Release NG4.4 (Sat Jun 11 21:01:24 CEST 2011)
 
 (ENHANCE) Make "Remove References" and "Remove Referenced-by" icons nicer
