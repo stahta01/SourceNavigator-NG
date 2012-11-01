@@ -586,6 +586,17 @@ int main(int argc, char **argv)
 
 		linenum++;
 
+		/*
+		 If first char is '\0' or '#' do nothing, and read next line.
+		 Echo any line starting with "Status: " to stdout (report to SN hyper), and read next line.
+		 
+		 Look for the first ';' delimiter, set key to THIS char.
+		 Look for the next ';' delimiter, set data to THIS char.
+		 
+		 Supply to db_insert_entry():
+		 key+1 == first char of actual key string
+		 data+1 == first char of actual data string
+		 */
 		key = strchr(bufp,';');
 		if(key) {
 			data = strchr(key + 1,';');
