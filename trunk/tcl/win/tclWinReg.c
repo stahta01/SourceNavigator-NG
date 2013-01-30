@@ -738,7 +738,11 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 	    if (regWinProcs->useWide) {
-		while (*((Tcl_UniChar *)p)++ != 0) {}
+		/*
+		 old code; cast strictly speaking not allowed by C standard		
+		 while (*((Tcl_UniChar *)p)++ != 0) {}
+		 */
+		while (*p != 0) { p = ((Tcl_UniChar *)p) + 1;}
 	    } else {
 		while (*p++ != '\0') {}
 	    }
