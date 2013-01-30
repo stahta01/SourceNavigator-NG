@@ -1155,7 +1155,12 @@ Tcl_DdeObjCmd(
 	}
 	case DDE_EVAL: {
 	    objc -= (async + 3);
-	    ((Tcl_Obj **) objv) += (async + 3);
+		/*
+	 	 old code; cast strictly speaking not allowed by C standard:
+		 ((Tcl_Obj **) objv) += (async + 3);
+		*/
+	    objv = ((Tcl_Obj **) objv) + (async + 3);
+
 
             /*
 	     * See if the target interpreter is local.  If so, execute
