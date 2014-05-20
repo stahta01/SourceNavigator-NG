@@ -5208,7 +5208,7 @@ YY_RULE_SETUP
             column_start = tokens_head->start_column;
             line_end = tokens_head->end_line;
             column_end = tokens_head->end_column;
-            if (strcmp(tokens_head->strval, "parent") && strcmp(tokens_head->strval, "self"))
+            if (strcasecmp(tokens_head->strval, "parent") && strcasecmp(tokens_head->strval, "self"))
                 clsname = SN_StrDup(tokens_head->strval);
         } else if (tokens_head->type == CLASS_SCOPE_OPERATOR) {
             if ((prevToken == SOMEWORD) && clsname) {
@@ -6344,9 +6344,9 @@ YY_RULE_SETUP
     int ref_from_scope_type;
     char *clsname;
 
-    if (strcmp(tokens_head->strval, "parent") == 0) {
+    if (strcasecmp(tokens_head->strval, "parent") == 0) {
         clsname = current_parent;
-    } else if (strcmp(tokens_head->strval, "self") == 0) {
+    } else if (strcasecmp(tokens_head->strval, "self") == 0) {
         clsname = current_class;
     } else {
         clsname = tokens_head->strval;
