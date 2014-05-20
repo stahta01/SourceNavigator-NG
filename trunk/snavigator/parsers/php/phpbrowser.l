@@ -2737,6 +2737,49 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     free_head_token(); /* :: */
 }
 
+<TOKEN>"STATIC_KEYWORD CLASS_SCOPE_OPERATOR" {
+    /*
+    * Note: keep parsing "fuzzy" by stopping at the pattern 'classname::'
+    *  and then let other rules take over.
+    */
+    int ref_from_scope_type;
+    char *clsname;
+
+    // special case where we treat 'static' as a predefined class instead of a scope keyword
+    clsname = "static";
+    // clsname = tokens_head->strval;
+    /* FIXME: is there a highlight for a reference to a class name? */
+    sn_highlight(SN_HIGH_CLASSDEF,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "direct class access at %d\n", token_index);
+    fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    #endif
+
+    ref_from_scope_type = from_what_scope();
+
+    /* NOTE: we use '#' as the refclass so the GUI will point to the class def */
+    result = sn_insert_xref(SN_REF_TO_CLASS,
+        ref_from_scope_type,
+        SN_REF_SCOPE_GLOBAL,
+        current_class,
+        current_refblock,
+        NULL,
+        "#",
+        clsname,
+        NULL, 
+        sn_current_file(),
+        tokens_head->start_line,
+        SN_REF_READ);
+
+    assert(result == 0);
+
+    free_head_token(); /* REFCLASS */
+    free_head_token(); /* :: */
+}
+
 
 <TOKEN>"INCREMENT_OPERATORS VARIABLE OPEN_BRACKET" {
     #ifdef TOKEN_DEBUG
