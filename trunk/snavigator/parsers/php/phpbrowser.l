@@ -2279,9 +2279,6 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
 
     free_head_token(); /* const keyword */
 
-    if ( !current_class )
-        return;
-
     result = sn_insert_symbol(SN_ENUM_CONST_DEF,
         current_class,
         tokens_head->strval,
