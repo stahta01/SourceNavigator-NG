@@ -86,6 +86,7 @@ typedef enum {
     ABSTRACT_KEYWORD,  /* abstract class or member function  */
     TRY_KEYWORD, /* try {} catch() {} catch() {} ... */
     CATCH_KEYWORD, /* try {} catch() {} catch() {} .. .*/
+    FINALLY_KEYWORD, /* try {} catch() {} catch() {} finally {} .. .*/
     PUBLIC_KEYWORD,  /* visible declared public  */
     PROTECTED_KEYWORD,  /* visiblity declared protected */
     PRIVATE_KEYWORD,  /* visiblity declared private */
@@ -319,7 +320,7 @@ any-tokens    (" "|" "{symbol}" "|" "{symbol}" "({symbol}" ")*)
 
 include-keywords    ("include"|"include_once"|"require"|"require_once")
 
-keywords    ("and"|"or"|"xor"|"as"|"break"|"case"|"cfunction"|"clone"|"continue"|"declare"|"default"|"die"|"do"|"echo"|"else"|"elseif"|"empty"|"enddeclare"|"endfor"|"endforeach"|"endif"|"endswitch"|"endwhile"|"eval"|"exit"|"false"|"final"|"for"|"foreach"|"if"|"instanceof"|"isset"|"list"|"null"|"old_function"|"print"|"return"|"switch"|"throw"|"true"|"unset"|"use"|"var"|"while"|"__FUNCTION__"|"__FILE__"|"__CLASS__"|"__LINE__")
+keywords    ("and"|"or"|"xor"|"as"|"break"|"case"|"cfunction"|"clone"|"continue"|"declare"|"default"|"die"|"do"|"echo"|"else"|"elseif"|"empty"|"enddeclare"|"endfor"|"endforeach"|"endif"|"endswitch"|"endwhile"|"eval"|"exit"|"false"|"finally"|"final"|"for"|"foreach"|"if"|"instanceof"|"isset"|"list"|"null"|"old_function"|"print"|"return"|"switch"|"throw"|"true"|"unset"|"use"|"var"|"while"|"__FUNCTION__"|"__FILE__"|"__CLASS__"|"__LINE__")
 
 dq-string-token  "DOUBLE_QUOTED_STRING"
 sq-string-token  "SINGLE_QUOTED_STRING"
@@ -1336,6 +1337,18 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         sn_advance_column(yyleng);
 }
 
+<PHP>"finally" {
+    #if MATCH_DUMP
+    matched_pattern("finally", yytext);
+    #endif
+    append_token(FINALLY_KEYWORD, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+        sn_advance_column(yyleng);
+}
+
 <PHP>"abstract" {
     #if MATCH_DUMP
     matched_pattern("public", yytext);
@@ -1795,6 +1808,15 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     }
 
     push_brace(CATCH_KEYWORD);
+    free_head_token(); /* OPEN_BRACE */
+}
+
+<TOKEN>"FINALLY_KEYWORD OPEN_BRACE" {
+    sn_highlight(SN_HIGH_KEYWORD,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
+    push_brace(FINALLY_KEYWORD);
+    free_head_token(); /* FINALLY keyword */
     free_head_token(); /* OPEN_BRACE */
 }
 
@@ -2927,6 +2949,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
             case ARRAY_KEYWORD:
             case TRY_KEYWORD:
             case CATCH_KEYWORD:
+            case FINALLY_KEYWORD:
             case PUBLIC_KEYWORD:
             case ABSTRACT_KEYWORD:
             case PROTECTED_KEYWORD:
@@ -3504,6 +3527,8 @@ char * TokenTypeToString(Token *tok)
             return "TRY_KEYWORD";
         case CATCH_KEYWORD:
             return "CATCH_KEYWORD";
+        case FINALLY_KEYWORD:
+            return "FINALLY_KEYWORD";
         case ABSTRACT_KEYWORD:
             return "ABSTRACT_KEYWORD";
         case PUBLIC_KEYWORD:
