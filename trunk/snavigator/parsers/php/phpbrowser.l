@@ -2704,17 +2704,11 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     int ref_from_scope_type;
     char *clsname;
 
-    if (strcasecmp(tokens_head->strval, "parent") == 0) {
-        clsname = current_parent;
-    } else if (strcasecmp(tokens_head->strval, "self") == 0) {
-        clsname = current_class;
-    } else {
-        clsname = tokens_head->strval;
-        /* FIXME: is there a highlight for a reference to a class name? */
-        sn_highlight(SN_HIGH_CLASSDEF,
-            tokens_head->start_line, tokens_head->start_column,
-            tokens_head->end_line, tokens_head->end_column);
-    }
+    clsname = tokens_head->strval;
+    /* FIXME: is there a highlight for a reference to a class name? */
+    sn_highlight(SN_HIGH_CLASSDEF,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
 
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "direct class access at %d\n", token_index);

@@ -6412,17 +6412,11 @@ YY_RULE_SETUP
     int ref_from_scope_type;
     char *clsname;
 
-    if (strcasecmp(tokens_head->strval, "parent") == 0) {
-        clsname = current_parent;
-    } else if (strcasecmp(tokens_head->strval, "self") == 0) {
-        clsname = current_class;
-    } else {
-        clsname = tokens_head->strval;
-        /* FIXME: is there a highlight for a reference to a class name? */
-        sn_highlight(SN_HIGH_CLASSDEF,
-            tokens_head->start_line, tokens_head->start_column,
-            tokens_head->end_line, tokens_head->end_column);
-    }
+    clsname = tokens_head->strval;
+    /* FIXME: is there a highlight for a reference to a class name? */
+    sn_highlight(SN_HIGH_CLASSDEF,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
 
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "direct class access at %d\n", token_index);
@@ -6453,7 +6447,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 119:
 YY_RULE_SETUP
-#line 2747 "phpbrowser.l"
+#line 2741 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "increment array variable start token %d\n", token_index);
@@ -6478,7 +6472,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 2769 "phpbrowser.l"
+#line 2763 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable start token %d\n", token_index);
@@ -6500,7 +6494,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 2788 "phpbrowser.l"
+#line 2782 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable array dimension tokens %d\n", token_index);
@@ -6519,7 +6513,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 2804 "phpbrowser.l"
+#line 2798 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable assignment end token %d\n", token_index);
@@ -6550,7 +6544,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 123:
 YY_RULE_SETUP
-#line 2832 "phpbrowser.l"
+#line 2826 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable read/write assignment end token %d\n", token_index);
@@ -6580,7 +6574,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 124:
 YY_RULE_SETUP
-#line 2859 "phpbrowser.l"
+#line 2853 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable post increment end token %d\n", token_index);
@@ -6611,7 +6605,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 125:
 YY_RULE_SETUP
-#line 2887 "phpbrowser.l"
+#line 2881 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "array variable read end token %d\n", token_index);
@@ -6652,7 +6646,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 126:
 YY_RULE_SETUP
-#line 2925 "phpbrowser.l"
+#line 2919 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "ate VDOUBLE_QUOTED_STRING token %d", token_index);
@@ -6669,7 +6663,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 127:
 YY_RULE_SETUP
-#line 2939 "phpbrowser.l"
+#line 2933 "phpbrowser.l"
 {
     enum sn_highlights type;
 
@@ -6720,12 +6714,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 128:
 YY_RULE_SETUP
-#line 2987 "phpbrowser.l"
+#line 2981 "phpbrowser.l"
 
 	YY_BREAK
 case 129:
 YY_RULE_SETUP
-#line 2989 "phpbrowser.l"
+#line 2983 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "matched unknown character \"%s\"\n", yytext);
@@ -6733,7 +6727,7 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(TOKEN):
-#line 2995 "phpbrowser.l"
+#line 2989 "phpbrowser.l"
 {
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "reached EOF in TOKEN buffer\n");
@@ -6777,7 +6771,7 @@ case YY_STATE_EOF(COMMENT_MODE):
 case YY_STATE_EOF(DQSTRING):
 case YY_STATE_EOF(SQSTRING):
 case YY_STATE_EOF(HDSTRING):
-#line 3032 "phpbrowser.l"
+#line 3026 "phpbrowser.l"
 {
     LongString token_buffer;
     char *base;
@@ -6898,10 +6892,10 @@ case YY_STATE_EOF(HDSTRING):
 	YY_BREAK
 case 130:
 YY_RULE_SETUP
-#line 3150 "phpbrowser.l"
+#line 3144 "phpbrowser.l"
 ECHO;
 	YY_BREAK
-#line 6905 "<stdout>"
+#line 6899 "<stdout>"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -7898,7 +7892,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 3150 "phpbrowser.l"
+#line 3144 "phpbrowser.l"
 
 
 
