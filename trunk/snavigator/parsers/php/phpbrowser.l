@@ -78,7 +78,7 @@ typedef enum {
     FUNCTION_KEYWORD, /* The keyword "function" */
     GLOBAL_KEYWORD, /* The keyword "global" */
     INCLUDE_KEYWORD, /* The keyword "include" */
-    CLASS_KEYWORD, /* declaration of a class */
+    CLASS_KEYWORD, /* declaration of a class or trait */
     CLASS_EXTENDS_KEYWORD, /* declaration of a derived class */
     NEW_KEYWORD, /* instantiation of a class into an object */
     ARRAY_KEYWORD, /* keyword "array" */
@@ -1236,6 +1236,18 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         sn_line(),
         sn_column() + yyleng);
         sn_advance_column(yyleng);
+}
+
+<PHP>"trait" {
+    #if MATCH_DUMP
+    matched_pattern("trait", yytext);
+    #endif
+    append_token(CLASS_KEYWORD, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+        sn_advance_column(yyleng); // treat 'trait' like 'class'
 }
 
 <PHP>"extends" {
