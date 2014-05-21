@@ -8322,6 +8322,8 @@ void push_function()
         n->next = function_nest_head;
         function_nest_head = n;
     }
+    current_function_args = NULL;
+    current_function = NULL;
 }
 
 void pop_function()
