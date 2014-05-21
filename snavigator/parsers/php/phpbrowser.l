@@ -59,7 +59,7 @@ typedef enum {
     SEMICOLON,     /* ';' */
     COMMA,         /* ',' */
     PERIOD,        /* '.' */
-    COLON_CHAR,    /* ':' open brace-like, or part of conditional, i.e., ?: */
+    COLON_CHAR,    /* ':' open brace-like, label, or part of conditional, i.e., ?: */
     ATSIGN_CHAR,   /* '@' function call error suppression char */
 
     VARIABLE,      /* $var */
@@ -93,6 +93,7 @@ typedef enum {
     STATIC_KEYWORD,  /* deref using class scope only */
     CONST_KEYWORD,  /* class constants only */
     CLASS_IMPLEMENTS_KEYWORD,  /* class declaring implementation */
+    GOTO_KEYWORD, /* The keyword "goto" */
 
     THIS_VARIABLE, /* Special class $this variable */
     PARENT_VARIABLE, /* Special class $parent variable */
@@ -1433,6 +1434,18 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         sn_advance_column(yyleng);
 }
 
+<PHP>"goto" {
+    #if MATCH_DUMP
+    matched_pattern("goto", yytext);
+    #endif
+    append_token(GOTO_KEYWORD, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+        sn_advance_column(yyleng);
+}
+
 <PHP>{include-keywords} {
     #if MATCH_DUMP
     matched_pattern("{include-keywords}", yytext);
@@ -2299,6 +2312,39 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     free_head_token(); /* = */
 }
 
+<TOKEN>"GOTO_KEYWORD SOMEWORD" {
+    int ref_from_scope_type;
+
+    sn_highlight(SN_HIGH_KEYWORD,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
+
+    free_head_token(); /* free goto keyword */
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "goto label %s at token %d\n", tokens_head->strval, token_index);
+    #endif
+
+    ref_from_scope_type = from_what_scope();
+
+    result = sn_insert_xref(SN_REF_TO_SUBROUTINE,
+        ref_from_scope_type,
+        SN_REF_SCOPE_GLOBAL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        tokens_head->strval,
+        NULL, 
+        sn_current_file(),
+        tokens_head->start_line,
+        SN_REF_PASS);
+
+    assert(result == 0);
+
+    free_head_token(); /* label name */
+}
+
 <TOKEN>"THIS_VARIABLE CLASS_MEMBER_OPERATOR SOMEWORD OPEN_PAREN" {
     char* fname;
     int line;
@@ -2734,6 +2780,32 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     free_head_token(); /* :: */
 }
 
+<TOKEN>"SOMEWORD COLON_CHAR" {
+    int ref_from_scope_type;
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "found label %s for goto at %d\n", tokens_head->strval, token_index);
+    #endif
+
+    ref_from_scope_type = from_what_scope();
+
+    result = sn_insert_symbol(PAF_SUBR_DEF,
+        NULL,
+        tokens_head->strval,
+        sn_current_file(),
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->start_line, tokens_head->end_column,
+        SN_PUBLIC,
+        NULL, NULL, NULL, NULL,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->start_line, tokens_head->end_column);
+
+    assert(result == 0);
+
+    free_head_token(); /* label */
+    free_head_token(); /* : */
+}
+
 <TOKEN>"STATIC_KEYWORD CLASS_SCOPE_OPERATOR" {
     /*
     * Note: keep parsing "fuzzy" by stopping at the pattern 'classname::'
@@ -2975,7 +3047,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
 
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "ate token %d %s", token_index,
-    TokenTypeToString(tokens_head));
+        TokenTypeToString(tokens_head));
     if (tokens_head->strval) {
         fprintf(tokenout, " \"%s\"", tokens_head->strval);
     }
@@ -3002,6 +3074,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
             case PRIVATE_KEYWORD:
             case STATIC_KEYWORD:
             case CONST_KEYWORD:
+            case GOTO_KEYWORD:
             case KEYWORD:
                 type = SN_HIGH_KEYWORD;
                 break;
@@ -3072,6 +3145,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     YY_BUFFER_STATE yybs;
 
     #ifdef TOKEN_DEBUG
+    if (tokenout == NULL)
     tokenout = fopen("tokens.out", "a");
     fprintf(tokenout, "reached EOF in lex input buffer in mode %s\n", modestring());
     #endif
@@ -3587,6 +3661,8 @@ char * TokenTypeToString(Token *tok)
             return "STATIC_KEYWORD";
         case CONST_KEYWORD:
             return "CONST_KEYWORD";
+        case GOTO_KEYWORD:
+            return "GOTO_KEYWORD";
         case UNKNOWN_TOKEN:
             return "UNKNOWN_TOKEN";
         case COMMENT_TOKEN:
@@ -4050,6 +4126,11 @@ main(int argc, char *argv[])
         entry.flag = SEARCH_DUP_KEY; /* add copy of entry.key */
         super_global_var_table->add( &super_global_var_table, entry );
     }
+
+    #ifdef TOKEN_DEBUG
+    if (tokenout == NULL)
+        tokenout = fopen("tokens.out", "a");
+    #endif
 
     return sn_main(argc, argv, group, &yyin, yylex, reset);
 }
