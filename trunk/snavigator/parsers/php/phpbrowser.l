@@ -320,7 +320,7 @@ any-tokens    (" "|" "{symbol}" "|" "{symbol}" "({symbol}" ")*)
 
 include-keywords    ("include"|"include_once"|"require"|"require_once")
 
-keywords    ("and"|"or"|"xor"|"as"|"break"|"case"|"cfunction"|"clone"|"continue"|"declare"|"default"|"die"|"do"|"echo"|"else"|"elseif"|"empty"|"enddeclare"|"endfor"|"endforeach"|"endif"|"endswitch"|"endwhile"|"eval"|"exit"|"false"|"finally"|"final"|"for"|"foreach"|"if"|"instanceof"|"isset"|"list"|"null"|"old_function"|"print"|"return"|"switch"|"throw"|"true"|"unset"|"use"|"var"|"while"|"yield"|"__FUNCTION__"|"__FILE__"|"__CLASS__"|"__LINE__")
+keywords    ("and"|"or"|"xor"|"as"|"break"|"case"|"cfunction"|"clone"|"continue"|"declare"|"default"|"die"|"do"|"echo"|"else"|"elseif"|"empty"|"enddeclare"|"endfor"|"endforeach"|"endif"|"endswitch"|"endwhile"|"eval"|"exit"|"false"|"finally"|"final"|"for"|"foreach"|"if"|"instanceof"|"isset"|"list"|"null"|"old_function"|"print"|"return"|"switch"|"throw"|"true"|"unset"|"use"|"var"|"while"|"yield"|"__FUNCTION__"|"__FILE__"|"__CLASS__"|"__LINE__"|"__METHOD__"|"__DIR__"|"__NAMESPACE__"|"__TRAIT__")
 
 dq-string-token  "DOUBLE_QUOTED_STRING"
 sq-string-token  "SINGLE_QUOTED_STRING"
