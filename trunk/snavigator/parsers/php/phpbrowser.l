@@ -61,6 +61,7 @@ typedef enum {
     PERIOD,        /* '.' */
     COLON_CHAR,    /* ':' open brace-like, label, or part of conditional, i.e., ?: */
     ATSIGN_CHAR,   /* '@' function call error suppression char */
+    BACKSLASH_CHAR,/* '\' */
 
     VARIABLE,      /* $var */
     ASSIGNMENT_OPERATOR, /* '=' */
@@ -72,6 +73,7 @@ typedef enum {
     CLASS_SCOPE_OPERATOR,   /* :: */
     CLASS_MEMBER_OPERATOR,   /* -> */
     MAPPING_OPERATOR,   /* =>  usually used in array init */
+    BACKSLASHES,    /* '\\' */
 
     SOMEWORD,          /* a sequence of text */
     KEYWORD,       /* a key sequence in this language */
@@ -94,6 +96,7 @@ typedef enum {
     CONST_KEYWORD,  /* class constants only */
     CLASS_IMPLEMENTS_KEYWORD,  /* class declaring implementation */
     GOTO_KEYWORD, /* The keyword "goto" */
+    NAMESPACE_KEYWORD, /* The keyword "namespace" */
 
     THIS_VARIABLE, /* Special class $this variable */
     PARENT_VARIABLE, /* Special class $parent variable */
@@ -169,7 +172,7 @@ static int highlight_file = 0;
 
 Token* tokens_head = NULL;
 Token* tokens_tail = NULL;
-int token_index = 0; /* current offset from original token_head */
+int token_index = 0; /* current offset from original tokens_head */
 
 static char group[] = "php";
 
@@ -303,13 +306,13 @@ int yywrap() { return 1; }
 %x PHP
 %x TOKEN
 
-ws        [ \t]
+ws         [ \t]
 wsn        [ \t\n]
-symbol        [a-zA-Z0-9_]+
+symbol     [a-zA-Z0-9_]+
 
-varname        {symbol}
+varname     {symbol}
 someword    {symbol}
-token        {symbol}
+token       {symbol}
 heredoc-id    {symbol}
 
 assignment-operators    ("+="|"-="|"*="|"/="|".="|"%="|"&="|"|="|"^="|"<<="|">>=")
@@ -337,6 +340,15 @@ function-argument-tokens (" "|" "{function-argument-token}" "("COMMA "{function-
 
 variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
 
+namespace-newpath-a    (" BACKSLASHES SOMEWORD "|" BACKSLASHES SOMEWORD "("BACKSLASHES SOMEWORD ")+)
+namespace-newpath-b    (" BACKSLASH_CHAR SOMEWORD "|" BACKSLASH_CHAR SOMEWORD "("BACKSLASH_CHAR SOMEWORD ")+)
+namespace-newpath-c    (" SOMEWORD "|" SOMEWORD "("BACKSLASHES SOMEWORD ")+)
+namespace-newpath-d    (" SOMEWORD "|" SOMEWORD "("BACKSLASH_CHAR SOMEWORD ")+)
+namespace-newpath-any ({namespace-newpath-a}|{namespace-newpath-b}|{namespace-newpath-c}|{namespace-newpath-d})
+
+namespace-subpath-a    (" SOMEWORD BACKSLASHES "|" SOMEWORD BACKSLASHES "("SOMEWORD BACKSLASHES ")+)
+namespace-subpath-b    (" SOMEWORD BACKSLASH_CHAR "|" SOMEWORD BACKSLASH_CHAR "("SOMEWORD BACKSLASH_CHAR ")+)
+namespace-subpath-any ({namespace-subpath-a}|{namespace-subpath-b})
 
 %%
     /* Start in HTML mode */
@@ -1446,6 +1458,18 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         sn_advance_column(yyleng);
 }
 
+<PHP>"namespace" {
+    #if MATCH_DUMP
+    matched_pattern("namespace", yytext);
+    #endif
+    append_token(NAMESPACE_KEYWORD, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+        sn_advance_column(yyleng);
+}
+
 <PHP>{include-keywords} {
     #if MATCH_DUMP
     matched_pattern("{include-keywords}", yytext);
@@ -1470,6 +1494,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         sn_column() + yyleng);
         sn_advance_column(yyleng);
 }
+
 
 <PHP>{someword} {
     #if MATCH_DUMP
@@ -1544,7 +1569,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     #if MATCH_DUMP
     matched_pattern("\\$", yytext);
     #endif
-
+    // Is this right, pushing token SOMEWORD for \$
     append_token(SOMEWORD, yytext,
         sn_line(),
         sn_column(),
@@ -1553,6 +1578,35 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
 
     sn_advance_column(yyleng);
 }
+
+<PHP>"\\\\" {
+    #if MATCH_DUMP
+    matched_pattern("\\\\", yytext);
+    #endif
+
+    append_token(BACKSLASHES, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+
+    sn_advance_column(yyleng);
+}
+
+<PHP>"\\" {
+    #if MATCH_DUMP
+    matched_pattern("\\", yytext);
+    #endif
+
+    append_token(BACKSLASH_CHAR, yytext,
+        sn_line(),
+        sn_column(),
+        sn_line(),
+        sn_column() + yyleng);
+
+    sn_advance_column(yyleng);
+}
+
 
 <PHP>. {
     #if MATCH_DUMP
@@ -1625,9 +1679,227 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     sn_highlight(SN_HIGH_KEYWORD,
         tokens_head->start_line, tokens_head->start_column,
         tokens_head->end_line, tokens_head->end_column);
-        free_head_token(); /* array keyword */
-        free_head_token(); /* OPEN_PAREN */
+    free_head_token(); /* array keyword */
+    free_head_token(); /* OPEN_PAREN */
 }
+
+
+<TOKEN>"NAMESPACE_KEYWORD"{namespace-newpath-any} {
+    int pathTokenIndex;
+    int namespace_start_line;
+    int namespace_start_column;
+    int namespace_end_line;
+    int namespace_end_column;
+    LongString  pbuff;
+    char *fullPath;
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace tokens %d\n", token_index);
+    fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    #endif
+
+    assert(tokens_head && (tokens_head->type == NAMESPACE_KEYWORD));
+
+    sn_highlight(SN_HIGH_KEYWORD,
+        tokens_head->start_line, tokens_head->start_column,
+        tokens_head->end_line, tokens_head->end_column);
+
+    free_head_token();
+
+    pathTokenIndex = token_index;
+    namespace_start_line = tokens_head->start_line;
+    namespace_start_column = tokens_head->start_column;
+    LongStringInit(&pbuff,0);
+    for (; tokens_head && tokens_head->strval;)
+    {
+        assert((tokens_head->type == SOMEWORD) ||
+             (tokens_head->type == BACKSLASHES) ||
+             (tokens_head->type == BACKSLASH_CHAR));
+        namespace_end_line = tokens_head->end_line;
+        namespace_end_column = tokens_head->end_column;
+        pbuff.append(&pbuff, tokens_head->strval, -1);
+        free_head_token();
+        if ((tokens_head->type != SOMEWORD) &&
+             (tokens_head->type != BACKSLASHES) &&
+             (tokens_head->type != BACKSLASH_CHAR))
+            break;
+    }
+
+    if (pbuff.buf)
+        fullPath = SN_StrDup(pbuff.buf);
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace '%s' declared at token %d\n", fullPath, pathTokenIndex);
+    #endif
+
+    if (fullPath && (strlen(fullPath) > 0))
+    {
+        result = sn_insert_symbol(SN_NAMESPACE_DEF, NULL, fullPath,
+            sn_current_file(),
+            namespace_start_line, namespace_start_column,
+            namespace_end_line, namespace_end_column,
+            SN_PUBLIC, NULL, NULL, NULL, NULL,
+            namespace_start_line, namespace_start_column,
+            namespace_end_line, namespace_end_column);
+        assert(result == 0);
+    }
+
+    pbuff.free(&pbuff);
+}
+
+<TOKEN>("BACKSLASHES"){namespace-subpath-any} {
+    int pathTokenIndex;
+    int namespace_start_line;
+    int namespace_start_column;
+    int namespace_end_line;
+    int namespace_end_column;
+    LongString  pbuff;
+    char *fullPath;
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace ref tokens %d\n", token_index);
+    fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    fprintf(tokenout, "tokens_head is \"%s\"\n", TokenTypeToString(tokens_head));
+    #endif
+
+    pathTokenIndex = token_index;
+    namespace_start_line = tokens_head->start_line;
+    namespace_start_column = tokens_head->start_column;
+    LongStringInit(&pbuff,0);
+    for (; tokens_head && tokens_head->strval;)
+    {
+        assert((tokens_head->type == SOMEWORD) ||
+             (tokens_head->type == BACKSLASHES));
+        if ((tokens_head->type == SOMEWORD) &&
+            (tokens_head->next->type != BACKSLASHES))
+            break;
+        namespace_end_line = tokens_head->end_line;
+        namespace_end_column = tokens_head->end_column;
+        pbuff.append(&pbuff, tokens_head->strval, -1);
+        free_head_token();
+    }
+
+
+    if (pbuff.buf)
+        fullPath = SN_StrDup(pbuff.buf);
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace '%s' referred at token %d\n", fullPath ? fullPath : "(null)", pathTokenIndex);
+    #endif
+
+    if (fullPath && (strlen(fullPath) > 0))
+    {
+        sn_highlight(SN_HIGH,
+            namespace_start_line, namespace_start_column,
+            namespace_end_line, namespace_end_column);
+    }
+
+    pbuff.free(&pbuff);
+}
+
+<TOKEN>("BACKSLASH_CHAR"){namespace-subpath-any} {
+    int pathTokenIndex;
+    int namespace_start_line;
+    int namespace_start_column;
+    int namespace_end_line;
+    int namespace_end_column;
+    LongString  pbuff;
+    char *fullPath;
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace ref tokens %d\n", token_index);
+    fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    fprintf(tokenout, "tokens_head is \"%s\"\n", TokenTypeToString(tokens_head));
+    #endif
+
+    pathTokenIndex = token_index;
+    namespace_start_line = tokens_head->start_line;
+    namespace_start_column = tokens_head->start_column;
+    LongStringInit(&pbuff,0);
+    for (; tokens_head && tokens_head->strval;)
+    {
+        assert((tokens_head->type == SOMEWORD) ||
+             (tokens_head->type == BACKSLASH_CHAR));
+        if ((tokens_head->type == SOMEWORD) &&
+            (tokens_head->next->type != BACKSLASH_CHAR))
+            break;
+        namespace_end_line = tokens_head->end_line;
+        namespace_end_column = tokens_head->end_column;
+        pbuff.append(&pbuff, tokens_head->strval, -1);
+        free_head_token();
+    }
+
+
+    if (pbuff.buf)
+        fullPath = SN_StrDup(pbuff.buf);
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace '%s' referred at token %d\n", fullPath ? fullPath : "(null)", pathTokenIndex);
+    #endif
+
+    if (fullPath && (strlen(fullPath) > 0))
+    {
+        sn_highlight(SN_HIGH,
+            namespace_start_line, namespace_start_column,
+            namespace_end_line, namespace_end_column);
+    }
+
+    pbuff.free(&pbuff);
+}
+
+
+<TOKEN>{namespace-subpath-any} {
+    int pathTokenIndex;
+    int namespace_start_line;
+    int namespace_start_column;
+    int namespace_end_line;
+    int namespace_end_column;
+    LongString  pbuff;
+    char *fullPath;
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace ref tokens %d\n", token_index);
+    fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    fprintf(tokenout, "tokens_head is \"%s\"\n", TokenTypeToString(tokens_head));
+    #endif
+
+    pathTokenIndex = token_index;
+    namespace_start_line = tokens_head->start_line;
+    namespace_start_column = tokens_head->start_column;
+    LongStringInit(&pbuff,0);
+    for (; tokens_head && tokens_head->strval;)
+    {
+        assert((tokens_head->type == SOMEWORD) ||
+             (tokens_head->type == BACKSLASHES) ||
+             (tokens_head->type == BACKSLASH_CHAR));
+        if ((tokens_head->type == SOMEWORD) &&
+            (tokens_head->next->type != BACKSLASHES) &&
+            (tokens_head->next->type != BACKSLASH_CHAR))
+            break;
+        namespace_end_line = tokens_head->end_line;
+        namespace_end_column = tokens_head->end_column;
+        pbuff.append(&pbuff, tokens_head->strval, -1);
+        free_head_token();
+    }
+
+
+    if (pbuff.buf)
+        fullPath = SN_StrDup(pbuff.buf);
+
+    #ifdef TOKEN_DEBUG
+    fprintf(tokenout, "namespace '%s' referred at token %d\n", fullPath ? fullPath : "(null)", pathTokenIndex);
+    #endif
+
+    if (fullPath && (strlen(fullPath) > 0))
+    {
+        sn_highlight(SN_HIGH,
+            namespace_start_line, namespace_start_column,
+            namespace_end_line, namespace_end_column);
+    }
+
+    pbuff.free(&pbuff);
+}
+
 
 <TOKEN>{literal-token}" MAPPING_OPERATOR" {
     int line_start, line_end, column_start, column_end;
@@ -1693,6 +1965,8 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "function at token %d\n", token_index);
     fprintf(tokenout, "match text was \"%s\"\n", yytext);
+    if (tokens_head->type != FUNCTION_KEYWORD)
+        fprintf(tokenout, "unexpected token '%s'\n", TokenTypeToString(tokens_head));
     #endif
     assert(tokens_head->type == FUNCTION_KEYWORD);
 
@@ -2222,11 +2496,12 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
         if (global_var_table == NULL) {
             global_var_table = SearchTableCreate(100, SEARCH_HASH_TABLE, FreeGlobalEntry);
         }
+        assert(global_var_table != NULL);
 
         entry.key = tokens_head->strval;
         entry.key_len = -1;
 
-        if (global_var_table->search( &global_var_table, entry ) == NULL) {
+        if (tokens_head->strval && (global_var_table->search( &global_var_table, entry ) == NULL)) {
             result = sn_insert_symbol(SN_GLOB_VAR_DEF, current_class,
                 tokens_head->strval, sn_current_file(),
                 tokens_head->start_line, tokens_head->start_column,
@@ -3048,6 +3323,8 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
     #ifdef TOKEN_DEBUG
     fprintf(tokenout, "ate token %d %s", token_index,
         TokenTypeToString(tokens_head));
+    if ( !tokens_head )
+        return;
     if (tokens_head->strval) {
         fprintf(tokenout, " \"%s\"", tokens_head->strval);
     }
@@ -3075,6 +3352,7 @@ variable-tokens    (" VARIABLE "|" VARIABLE "("COMMA VARIABLE ")+)
             case STATIC_KEYWORD:
             case CONST_KEYWORD:
             case GOTO_KEYWORD:
+            case NAMESPACE_KEYWORD:
             case KEYWORD:
                 type = SN_HIGH_KEYWORD;
                 break;
@@ -3569,6 +3847,8 @@ int from_what_scope()
 */
 char * TokenTypeToString(Token *tok)
 {
+    if (!tok)
+        return "NULL TOKEN";
     switch(tok->type)
     {
         case OPEN_PAREN:
@@ -3591,6 +3871,10 @@ char * TokenTypeToString(Token *tok)
             return "PERIOD";
         case COLON_CHAR:
             return "COLON_CHAR";
+        case BACKSLASHES:
+            return "BACKSLASHES";
+        case BACKSLASH_CHAR:
+            return "BACKSLASH_CHAR";
         case ATSIGN_CHAR:
             return "ATSIGN_CHAR";
         case VARIABLE:
@@ -3665,6 +3949,8 @@ char * TokenTypeToString(Token *tok)
             return "CONST_KEYWORD";
         case GOTO_KEYWORD:
             return "GOTO_KEYWORD";
+        case NAMESPACE_KEYWORD:
+            return "NAMESPACE_KEYWORD";
         case UNKNOWN_TOKEN:
             return "UNKNOWN_TOKEN";
         case COMMENT_TOKEN:
@@ -3672,7 +3958,7 @@ char * TokenTypeToString(Token *tok)
         case HTML_TOKEN:
             return "HTML_TOKEN";
         default:
-            return "TOKEN_NOT_MATCHED";
+            return "NONAME_TOKEN";
     }
 }
 
