@@ -31,3 +31,8 @@ PAF_FILE;f.c;c++<>
 PAF_FUNC_DEF;foo<>000002.005<>f.c;2.8<>0x0<>{void}<>{}<>{}<>{}
 PAF_FILE_SYMBOLS;f.c<>000002.005<>#<>foo<>fu;2.13<>2.5<>2.8<>{}
 }
+
+# cleanup
+file delete f.c
+::tcltest::cleanupTests
+return

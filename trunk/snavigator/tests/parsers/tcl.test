@@ -48,3 +48,8 @@ PAF_MBR_VAR_DEF;test_ns_2<>x<>000004.017<>f.tcl;4.18<>0x4<>{}<>{}<>{}<>{}
 PAF_FILE_SYMBOLS;f.tcl<>000004.017<>test_ns_2<>x<>iv;4.18<>4.17<>4.18<>{}
 }
 
+# cleanup
+file delete f.tcl
+file delete xout
+::tcltest::cleanupTests
+return
