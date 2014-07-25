@@ -60,7 +60,7 @@ typedef enum {
     COMMA,         /* ',' */
     PERIOD,        /* '.' */
     COLON_CHAR,    /* ':' open brace-like, label, or part of conditional, i.e., ?: */
-    ATSIGN_CHAR,   /* '@' function call error suppression char */
+    ATSIGN_CHAR,   /* '@' error suppression operator for expressions */
     BACKSLASH_CHAR,/* '\' */
 
     VARIABLE,      /* $var */
