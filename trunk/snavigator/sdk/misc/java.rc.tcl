@@ -22,13 +22,13 @@ proc paf_rc_symbol_browser {top menu_frame tool_frame} {
 
     #	destroy $tool_frame.make
 
-    button ${tool_frame}.netscape -text Netscape -command " exec netscape & "
+    button ${tool_frame}.browser -text Netscape -command " exec firefox & "
 
-    bind ${tool_frame}.netscape <Motion> "${info} config -text \"Start\
+    bind ${tool_frame}.browser <Motion> "${info} config -text \"Start\
       Netscape browser\""
-    bind ${tool_frame}.netscape <Leave> "${info} config -text \"\""
+    bind ${tool_frame}.browser <Leave> "${info} config -text \"\""
 
-    pack ${tool_frame}.netscape -side left
+    pack ${tool_frame}.browser -side left
 }
 
 proc paf_edit_rc {top menu_frame tool_frame text} {
@@ -37,15 +37,15 @@ proc paf_edit_rc {top menu_frame tool_frame text} {
     #	destroy $tool_frame.make;	# Delete a button!
 
 
-    # Create a new button to start netscape
-    button ${tool_frame}.netscape -text Netscape -command " exec netscape\
+    # Create a new button to start browser
+    button ${tool_frame}.browser -text Netscape -command " exec firefox\
       \[tkeGetFileName ${text}\] & "
 
-    bind ${tool_frame}.netscape <Motion> "${info} config -text \"Start\
+    bind ${tool_frame}.browser <Motion> "${info} config -text \"Start\
       Netscape browser\""
-    bind ${tool_frame}.netscape <Leave> "${info} config -text \"\""
+    bind ${tool_frame}.browser <Leave> "${info} config -text \"\""
 
-    pack ${tool_frame}.netscape -side left
+    pack ${tool_frame}.browser -side left
 
     # Create a new button to start appletviewer
     button ${tool_frame}.av -text ApV -command " exec appletviewer\
