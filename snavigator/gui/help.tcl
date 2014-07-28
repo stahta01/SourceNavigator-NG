@@ -48,13 +48,13 @@ proc sn_help {{file ""} {busy 1}} {
         sn_log "command -c start ${file}"
         set ret [catch {exec command /c start ${file} &} errmsg]
     } else {
-        global netscape_error netscape_exit_status
-        global netscape_done
+        global browser_error browser_exit_status
+        global browser_done
 
-        set netscape_done 0
+        set browser_done 0
         set html_view $sn_options(def,html-viewer)
-        if {${html_view} == ""} {
-            set html_view "netscape -remote openURL(%s)"
+        if {${html_view} == "" || ${html_view} == "netscape -remote openURL(%s)"} {
+            set html_view "firefox %s"
         }
         if {[string first {%s} ${html_view}] != -1} {
             set cmd [format ${html_view} ${file}]
@@ -62,21 +62,21 @@ proc sn_help {{file ""} {busy 1}} {
             set cmd [list ${html_view} ${file}]
         }
         sn_log "${cmd}"
-        set ret [catch {open "|${cmd}"} netscape_fd]
+        set ret [catch {open "|${cmd}"} browser_fd]
         if {${ret}} {
-            set errmsg ${netscape_fd}
+            set errmsg ${browser_fd}
         } else {
-            fconfigure ${netscape_fd} \
+            fconfigure ${browser_fd} \
                 -encoding $sn_options(def,system-encoding) \
                 -blocking 0
-            fileevent ${netscape_fd} readable [list netscape_reader\
-              ${netscape_fd}]
-            vwait netscape_done
-            if {${netscape_exit_status}} {
+            fileevent ${browser_fd} readable [list browser_reader\
+              ${browser_fd}]
+            vwait browser_done
+            if {${browser_exit_status}} {
                 if {![string match {*not running on display*}\
-                  ${netscape_error}]} {
+                  ${browser_error}]} {
                     set ret 1
-                    set errmsg ${netscape_error}
+                    set errmsg ${browser_error}
                 }\
                 elseif {[regsub {([.]*)-remote openURL\(file:([^\)]*)\)([.]*)}\
                   ${cmd} {\1\2\3} cmd] != 0} {
@@ -84,7 +84,7 @@ proc sn_help {{file ""} {busy 1}} {
                     eval exec ${cmd} &
                 } else {
                     set ret 1
-                    set errmsg ${netscape_error}
+                    set errmsg ${browser_error}
                 }
             }
         }
@@ -97,14 +97,14 @@ proc sn_help {{file ""} {busy 1}} {
     after 3000
 }
 
-proc netscape_reader {pipe} {
-    global netscape_error
-    global netscape_exit_status
-    global netscape_done
+proc browser_reader {pipe} {
+    global browser_error
+    global browser_exit_status
+    global browser_done
 
     if {[eof ${pipe}]} {
-        set netscape_exit_status [catch {close ${pipe}} netscape_error]
-        incr netscape_done
+        set browser_exit_status [catch {close ${pipe}} browser_error]
+        incr browser_done
         return
     }
     gets ${pipe} line

@@ -582,7 +582,7 @@ proc sn_init_globals {} {
         set sn_options(def,grep-mark-all) 0
 
         #networking
-        sn_add_option def html-viewer "netscape -remote openURL(%s)"
+        sn_add_option def html-viewer "firefox %s"
 
         #option needs to be there for backward compatibility.
         set sn_options(def,send-bugs-via-mail) 0

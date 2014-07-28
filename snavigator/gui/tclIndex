@@ -181,7 +181,7 @@ set auto_index(sn_goto_comp_error_or_grep) [list source [file join $dir grep.tcl
 set auto_index(::sourcenav::GrepDriver) [list source [file join $dir greppane.tcl]]
 set auto_index(Grep) [list source [file join $dir greppane.tcl]]
 set auto_index(sn_help) [list source [file join $dir help.tcl]]
-set auto_index(netscape_reader) [list source [file join $dir help.tcl]]
+set auto_index(browser_reader) [list source [file join $dir help.tcl]]
 set auto_index(balloon_button_bind) [list source [file join $dir help.tcl]]
 set auto_index(balloon_destroy) [list source [file join $dir help.tcl]]
 set auto_index(balloon_menu_bind) [list source [file join $dir help.tcl]]
