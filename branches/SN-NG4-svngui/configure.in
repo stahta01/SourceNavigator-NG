@@ -40,9 +40,9 @@ dnl properly define libexecdir
 libexecdir='${exec_prefix}/libexec/snavigator'
 AC_SUBST(libexecdir)
 
-TOP_SUBDIRS="tcl tk itcl tix libgui db4/PORT snavigator"
+TOP_SUBDIRS="tcl tk itcl tix expect libgui db4/PORT snavigator"
 AC_SUBST(TOP_SUBDIRS)
-AC_CONFIG_SUBDIRS([tcl tk itcl tix libgui db4/PORT snavigator])
+AC_CONFIG_SUBDIRS([tcl tk itcl tix expect libgui db4/PORT snavigator])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
