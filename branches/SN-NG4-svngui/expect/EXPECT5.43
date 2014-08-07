@@ -1,0 +1,6 @@
+This version of Expect was downloaded from sourceforge.net
+and has been modified to work with SN-NG. This is using an
+older version of expect in order to work with the older
+version of tcl/tk that accompanies this SN-NG.
+
+Please read the README file for more information about Expect.

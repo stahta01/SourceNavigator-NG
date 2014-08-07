@@ -1,0 +1,22 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:547: checking for Tcl configuration
+configure:640: checking Tcl build library
+configure:644: checking for Tcl_CreateCommand
+configure:672: cc -o conftest    conftest.c -L/home/maurice/src/sourcenav-svngui/tcl/unix -ltcl8.3 -ldl  -lieee -lm 1>&5
+configure:688: checking if Tcl library build specification is valid
+configure:716: checking for gcc
+configure:829: checking whether the C compiler (gcc -pipe  ) works
+configure:845: gcc -pipe -o conftest    conftest.c  1>&5
+configure:871: checking whether the C compiler (gcc -pipe  ) is a cross-compiler
+configure:876: checking whether we are using GNU C
+configure:885: gcc -pipe -E conftest.c
+configure:904: checking whether gcc -pipe accepts -g
+configure:937: checking whether the compiler (gcc -pipe) actually works
+configure:946: gcc -pipe -c -g -O2  conftest.c 1>&5
+configure:965: gcc -pipe -o conftest -g -O2   conftest.c  1>&5
+configure:994: checking how to run the C preprocessor
+configure:1015: gcc -pipe -E  conftest.c >/dev/null 2>conftest.out
+configure:1075: checking if running LynxOS
+configure:1159: checking for Tcl private headers
