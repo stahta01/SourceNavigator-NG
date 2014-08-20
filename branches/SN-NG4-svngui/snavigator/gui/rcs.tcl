@@ -137,7 +137,10 @@ itcl::class RevisionCtrl& {
 
         pack $itk_component(hull).p -fill both -expand y
 
-        label ${selected}.label -anchor w -text [get_indep String ChooseFiles]
+        itk_component add cflabel {
+            label ${selected}.cflabel \
+              -anchor w -text [get_indep String ChooseFiles]
+        }
 
         set itk_option(-input) ${proj_files}
 
@@ -152,13 +155,17 @@ itcl::class RevisionCtrl& {
           -bitmap @$sn_path(bitmapdir)/file.xbm -contents $itk_option(-input)
 
         set rcs_hist_top ${history}.top
-        set rcs_hist_show ${history}.show
+        set rcs_hist_show_frame ${history}.rcs_hist_show_frame
+        frame ${rcs_hist_show_frame} -relief sunken -borderwidth 2
+        set rcs_hist_show ${rcs_hist_show_frame}.show
         ${selected_list} treebind <Double-1> "${this} edit_file"
         ${selected_list} treebind <Double-3> "${this} edit_file"
         ${selected_list} treebind <Return> "${this} edit_file; break"
         ${selected_list} treebind <space> "${this} edit_file; break"
 
-        pack ${selected}.label -fill x
+
+        ###pack ${selected}.cflabel -fill x
+        pack $itk_component(cflabel) -fill x
         pack ${selected_list} -fill both -expand y
 
         ${this} configure -title [sn_title [get_indep String RevisionControlEditorNoKey]]
@@ -184,10 +191,46 @@ itcl::class RevisionCtrl& {
 
         label ${rcs_symb_top} -text [get_indep String SymbolicTags]
 
-        listbox ${rcs_hist_show} -font ${font}
+        listbox ${rcs_hist_show} -font ${font} -relief flat \
+          -xscroll "scrollListbox ${rcs_hist_show}.horizsb" \
+          -yscroll "scrollListbox ${rcs_hist_show}.vertsb"
+        scrollbar ${rcs_hist_show}.vertsb -orient vertical \
+          -relief flat -borderwidth 1 -highlightthickness 0 \
+          -command "${rcs_hist_show} yview"
+        scrollbar ${rcs_hist_show}.horizsb -orient horizontal \
+          -relief flat -borderwidth 1 -highlightthickness 0 \
+          -command "${rcs_hist_show} xview"
+        if {[string equal "unix" $::tcl_platform(platform)]} {
+            bind ${rcs_hist_show} <Button-4> {
+                %W yview scroll -5 units
+            }
+            bind ${rcs_hist_show} <Shift-Button-4> {
+                %W yview scroll -1 units
+            }
+            bind ${rcs_hist_show} <Control-Button-4> {
+                %W xview scroll -10 units
+            }
+            bind ${rcs_hist_show} <Button-5> {
+                %W yview scroll 5 units
+            }
+            bind ${rcs_hist_show} <Shift-Button-5> {
+                %W yview scroll 1 units
+            }
+            bind ${rcs_hist_show} <Control-Button-5> {
+                %W xview scroll 10 units
+            }
+        } else {
+            bind ${rcs_hist_show} <MouseWheel> {
+                %W yview scroll [expr {- (%D / 120) * 4}] units
+            }
+        }
+
 
         pack ${rcs_hist_top} -fill x
-        pack ${rcs_hist_show} -fill both -expand y
+        pack ${rcs_hist_show_frame} -fill both -expand 1
+        pack ${rcs_hist_show} -side left -fill both -expand yes
+        pack ${rcs_hist_show}.vertsb -side right -fill y
+        pack ${rcs_hist_show}.horizsb -side bottom -fill x
 
         listbox ${rcs_symb_show} -font ${font}
 

@@ -143,6 +143,16 @@ proc sn_add_version_control_system {ident args} {
 	    "-use-relative-path" {
              	    set sn_verctl_options(${ident},use-relative-path) $val
 	        }
+            "-with-grep-inclusive" {
+                    if {${val} == "yes"} {
+                        set sn_verctl_options(${ident},with-grep-inclusive) 1
+                    }
+                }
+            "-with-credentials" {
+                    if {${val} == "yes"} {
+                        set sn_verctl_options(${ident},with-credentials) 1
+                    }
+                }
             default {
                     puts stderr "sn_add_version_control_system: unknown\
                       argument <${arg}>"
@@ -153,7 +163,7 @@ proc sn_add_version_control_system {ident args} {
     lappend sn_options(sys,supported-vcsystems) [list ${title} ${ident}]
 }
 
-proc sn_rcs_extract_text {patterns text} {
+proc sn_rcs_extract_text {patterns text {inclusive 0} } {
     set result ""
     foreach pair ${patterns} {
         if {[llength ${pair}] > 1} {
@@ -178,9 +188,14 @@ proc sn_rcs_extract_text {patterns text} {
                     incr end
                 }
             }
-            foreach line [lrange ${text} [expr ${start} + 1] [expr ${end}\
-              - 1]] {
-                lappend result ${line}
+            if {$inclusive == 1} {
+                foreach line [lrange ${text} ${start} [expr ${end} - 1]] {
+                    lappend result ${line}
+                }
+            } else {
+                foreach line [lrange ${text} [expr ${start} + 1] [expr ${end} - 1]] {
+                    lappend result ${line}
+                }
             }
         } else {
             set pattern ${pair}
@@ -205,6 +220,23 @@ proc sn_revision_ctrl {} {
         ${obj} raise
     } else {
         RevisionCtrl& ${obj}
+    }
+}
+
+proc sn_append_auth { rcstype cmdline } {
+    upvar $cmdline cmd
+    global sn_verctl_options
+    global sn_options
+    if { "${rcstype}" == "svn" } {
+        if {[info exists sn_verctl_options(${rcstype},with-credentials)] &&\
+            $sn_verctl_options(${rcstype},with-credentials) == 1} {
+            if {[info exists sn_options(both,credname)] && "$sn_options(both,credname)]" != ""} {
+                append cmd " --username=$sn_options(both,credname) "
+            }
+            if {[info exists sn_options(both,credpw)] &&  "$sn_options(both,credpw)]" != ""} {
+                append cmd " --password=$sn_options(both,credpw) "
+            }
+        }
     }
 }
 
@@ -239,6 +271,8 @@ proc sn_rcs_history {file revision syms history} {
         set cmd "$sn_verctl_options(${rcstype},history) $relative_file"
     }
 
+    sn_append_auth $rcstype cmd
+
     # Change directory to file's directory. 
     if {$sn_verctl_options($rcstype,use-relative-path)} {
 	set currentworkdir [pwd]
@@ -254,7 +288,11 @@ proc sn_rcs_history {file revision syms history} {
 
     if {[info exists sn_verctl_options(${rcstype},symbolic-tags-pattern)]} {
         set patterns $sn_verctl_options(${rcstype},symbolic-tags-pattern)
-        set symbols [sn_rcs_extract_text ${patterns} ${output}]
+        set use_inclusive 0
+        if {[info exists sn_verctl_options(${rcstype},with-grep-inclusive)]} {
+            set use_inclusive $sn_verctl_options(${rcstype},with-grep-inclusive)
+        }
+        set symbols [sn_rcs_extract_text ${patterns} ${output} ${use_inclusive}]
     } else {
         set symbols ""
     }
@@ -281,7 +319,11 @@ proc sn_rcs_history {file revision syms history} {
     }
 
     if {[info exists patterns]} {
-        set output [sn_rcs_extract_text ${patterns} ${output}]
+        set use_inclusive 0
+        if {[info exists sn_verctl_options(${rcstype},with-grep-inclusive)]} {
+            set use_inclusive $sn_verctl_options(${rcstype},with-grep-inclusive)
+        }
+        set output [sn_rcs_extract_text ${patterns} ${output} ${use_inclusive}]
     }
     # else no modification to output.
 
@@ -345,8 +387,10 @@ proc sn_rcs_get_version_nums {file revisions} {
 	cd [sn_rcs_get_common_path $file]
     }
 
-    if {[catch {sn_rcs_exec "$sn_verctl_options(${rcstype},history) ${relative_file}"\
-      0} output]} {
+    set cmd "$sn_verctl_options(${rcstype},history) ${relative_file}"
+    sn_append_auth $rcstype cmd
+
+    if {[catch {sn_rcs_exec ${cmd} 0} output]} {
         return 0
     }
 
@@ -462,6 +506,8 @@ proc sn_rcs_checkin {marked_files} {
         } else {
             set cmd $sn_verctl_options(${rcstype},checkin)
         }
+
+        sn_append_auth $rcstype cmd
 
         # Separate out the filename arguments.
         append cmd " "
@@ -602,6 +648,8 @@ proc sn_rcs_checkout {marked_files {bsy 1}} {
             set cmd $sn_verctl_options(${rcstype},checkout)${rev}
         }
 
+        sn_append_auth $rcstype cmd
+
 	# Change directory to file's directory. 
 	if {$sn_verctl_options($rcstype,use-relative-path)} {
 	    set currentworkdir [pwd]
@@ -737,6 +785,8 @@ proc sn_rcs_lockunlockdel {cmd marked_files {bsy 1}} {
             "del" {
                     set cmdline $sn_verctl_options(${rcstype},delete-revision)
 
+                    sn_append_auth $rcstype cmdline
+
 		    # Change directory to file's directory. 
 	            if {$sn_verctl_options($rcstype,use-relative-path)} {
 			set currentworkdir [pwd]
@@ -757,6 +807,8 @@ proc sn_rcs_lockunlockdel {cmd marked_files {bsy 1}} {
                         set cmdline\
                           $sn_verctl_options(${rcstype},lock-individual)
 
+                        sn_append_auth $rcstype cmdline
+
 			# Change directory to file's directory. 
 			if {$sn_verctl_options($rcstype,use-relative-path)} {
 			    set currentworkdir [pwd]
@@ -772,6 +824,8 @@ proc sn_rcs_lockunlockdel {cmd marked_files {bsy 1}} {
 			}
                     } else {
                         set cmdline $sn_verctl_options(${rcstype},lock)
+
+                        sn_append_auth $rcstype cmdline
 
 			# Change directory to file's directory. 
 			if {$sn_verctl_options($rcstype,use-relative-path)} {
@@ -794,6 +848,8 @@ proc sn_rcs_lockunlockdel {cmd marked_files {bsy 1}} {
                         set cmdline\
                           $sn_verctl_options(${rcstype},unlock-individual)
 
+                        sn_append_auth $rcstype cmdline
+
 			# Change directory to file's directory. 
 			if {$sn_verctl_options($rcstype,use-relative-path)} {
 			    set currentworkdir [pwd]
@@ -810,6 +866,8 @@ proc sn_rcs_lockunlockdel {cmd marked_files {bsy 1}} {
 
                     } else {
                         set cmdline $sn_verctl_options(${rcstype},unlock)
+
+                        sn_append_auth $rcstype cmdline
 
 			# Change directory to file's directory. 
 			if {$sn_verctl_options($rcstype,use-relative-path)} {
@@ -876,6 +934,8 @@ proc sn_rcs_diff {basewindow files} {
       [get_indep String cancel]
 
     set cmd $sn_verctl_options(${rcstype},checkout-individual-to-stdout)
+
+    sn_append_auth $rcstype cmd
 
     ${diff} config -command " set ${w}-select_status [list ${cmd}] "
     ${cancel} config -command " set ${w}-select_status cancel "

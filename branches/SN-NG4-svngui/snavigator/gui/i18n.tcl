@@ -72,7 +72,7 @@ proc sn_string_init {filename} {
     close ${f}
 }
 
-proc get_indep {Type Identifier} {
+proc get_indep {Type Identifier {EmptyValue "UNKNOWN"}} {
 
     global sn_strings
     global sn_accels
@@ -81,14 +81,17 @@ proc get_indep {Type Identifier} {
     if {${Type} == "String"} {
         if {[catch {set str $sn_strings(${Identifier})}]} {
 
-            sn_error_dialog "String \"String\" identifier \"${Identifier}\"\
+            sn_log "String \"String\" identifier \"${Identifier}\"\
               doesn't exist"
+            ##sn_error_dialog "String \"String\" identifier \"${Identifier}\"\
+            ##  doesn't exist"
 
             set sn_keys(${Identifier}) "UNKNOWN"
             set sn_strings(${Identifier}) "UNKNOWN"
             set sn_accels(${Identifier}) 0
 
-            return "UNKNOWN"
+            ##return "UNKNOWN"
+            return ${EmptyValue}
         }
         return ${str}
     }
@@ -96,14 +99,17 @@ proc get_indep {Type Identifier} {
     if {${Type} == "Accel"} {
         if {[catch {set key $sn_keys(${Identifier})}]} {
 
-            sn_error_dialog "String \"Accel\" identifier \"${Identifier}\"\
+            sn_log "String \"Accel\" identifier \"${Identifier}\"\
               doesn't exist"
+            ##sn_error_dialog "String \"Accel\" identifier \"${Identifier}\"\
+            ##  doesn't exist"
 
             set sn_keys(${Identifier}) "UNKNOWN"
             set sn_strings(${Identifier}) "UNKNOWN"
             set sn_accels(${Identifier}) 0
 
-            return "UNKNOWN"
+            ##return "UNKNOWN"
+            return ${EmptyValue}
         }
         return ${key}
     }
@@ -111,18 +117,25 @@ proc get_indep {Type Identifier} {
     if {${Type} == "Pos" || ${Type} == "pos"} {
         if {[catch {set pos $sn_accels(${Identifier})}]} {
 
-            sn_error_dialog "String \"Pos\" identifier \"${Identifier}\"\
+            sn_log "String \"Pos\" identifier \"${Identifier}\"\
               doesn't exist"
+            ##sn_error_dialog "String \"Pos\" identifier \"${Identifier}\"\
+            ##  doesn't exist"
 
             set sn_keys(${Identifier}) "UNKNOWN"
             set sn_strings(${Identifier}) "UNKNOWN"
             set sn_accels(${Identifier}) 0
 
-            return 0
+            if { "${EmptyValue}" ==  "UNKNOWN" } {
+              return 0
+            } else {
+              return ${EmptyValue}
+            }
         }
         return ${pos}
     }
 
-    return "Unknown"
+    return ${EmptyValue}
+    ##return "Unknown"
 }
 
