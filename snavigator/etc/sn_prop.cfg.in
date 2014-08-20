@@ -123,6 +123,31 @@ sn_add_version_control_system ccase \
 	-unlock "cleartool unreserve -nc " \
 	-unlock-individual "$sn_path(scriptsdir)/ccase-unlock-individual.sh "
 
+# Subversion (SVN)
+sn_add_version_control_system svn -default no \
+	-with-credentials "yes" \
+	-with-grep-inclusive "yes" \
+	-checkin "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp commit " \
+	-checkin-comment-via "" \
+	-checkin-exclusive "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp commit " \
+	-checkout "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp checkout " \
+	-checkout-exclusive "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp checkout " \
+	-checkout-individual "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp checkout " \
+	-checkout-individual-to-stdout "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp cat" \
+	-checkout-with-lock "" \
+	-delete-revision "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp delete " \
+	-discard "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp revert " \
+	-history "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp log " \
+	-history-pattern { {"^-----" "^====="} } \
+	-history-individual "$sn_path(bindir)/expect $sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp log " \
+	-history-individual-pattern { {"^-----" "^====="} } \
+	-history-replacements { {"[ \t]+" " "} } \
+	-ignore-dirs SVN \
+	-lock "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp lock " \
+	-lock-individual "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp lock " \
+	-revision-number-pattern "^r(\[0-9\]+) \[|\] " \
+	-unlock "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp unlock " \
+	-unlock-individual "$sn_path(bindir)/expect $sn_path(scriptsdir)/svnwraprev.exp unlock "
 
 # Parser configuration
 # To add a parser, insert additional procedure calls to "sn_add_parser"

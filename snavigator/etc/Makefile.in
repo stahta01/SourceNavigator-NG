@@ -290,7 +290,8 @@ ccase-checkout.sh \
 ccase-history-individual.sh \
 ccase-history.sh \
 ccase-lock-individual.sh \
-ccase-unlock-individual.sh
+ccase-unlock-individual.sh \
+svnwraprev.exp
 
 all: all-recursive
 

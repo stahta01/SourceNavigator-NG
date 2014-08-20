@@ -37,7 +37,8 @@ ccase-checkout.sh \
 ccase-history-individual.sh \
 ccase-history.sh \
 ccase-lock-individual.sh \
-ccase-unlock-individual.sh
+ccase-unlock-individual.sh \
+svnwraprev.exp
 # -EMT 070415
 
 #all-local:	stamp

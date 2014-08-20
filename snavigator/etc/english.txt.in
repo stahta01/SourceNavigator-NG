@@ -494,6 +494,11 @@ imp,[Implementation of
 def,[Definition of
 IncBroTit,I[nclude browser
 INFOStartClassBrw,Launch Class Browser for selected class
+PrefVcLoginFrame,Version Control Login
+PrefVcName,Username
+PrefVcNameHint,Enter User Name for Version Control System
+PrefVcPw,Password
+PrefVcPwHint,Enter Password for Version Control System
 
 Include,I[nclude
 IncludeLaunch,Launch Include Browser for selected file

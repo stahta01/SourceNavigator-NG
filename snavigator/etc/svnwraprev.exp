@@ -1,0 +1,193 @@
+##!/bin/sh
+##exec $sn_path(bindir)/expect "$0" "$@"
+
+##
+## expect script for wrapping SVN commands
+## Note: prefer the sourcenav expect bin to run this
+##
+
+global debugLevel
+global usePw
+global useName
+global svnCommand
+global svnFilename
+global svnArgs
+global svnRev
+global testLog
+global testBuff
+
+
+set debugLevel 1
+set usePw "";
+set useName "";
+set svnCommand ""; 		# grab svn command
+set svnFilename "";
+set svnArgs "";	# grab remaining arguments
+set svnRev ""; 		# grab the file revision wanted 
+set testLog {};
+set testBuff "";
+
+
+###set testLog [open "/tmp/svnwrap.log" "a+"]
+
+
+proc putlog {msg} {
+    global testLog
+    global debugLevel
+
+    if { $debugLevel != 0 } {
+        catch { puts $testLog $msg }
+    }
+    return
+}
+
+proc svn_read_commandline_arguments {} {
+    global argc argv
+    global svnCommand svnArgs svnRev svnFilename
+    global useName usePw
+    global testLog
+
+    set foundRev 0
+    set foundName 0
+    set foundCommand 0
+    set tmpArgs ""
+
+    ##putlog "process command line argc <${argc}> argv <${argv}>"
+
+    set svnArgs ""
+    set tmpArgs ""
+
+    if {${argc} < 1} {
+        putlog "Missing arguments to svn wrapper script"
+    }
+    for {set idx 0} {${idx} < ${argc}} {incr idx} {
+        set arg [lindex ${argv} ${idx}]
+
+        switch -regex -- ${arg} {
+            "--username=*" -
+            "-u=*" {
+                    set gotName [lindex ${argv} ${idx}]
+                    set useName [string range $gotName 11 end];
+                    append useName "\n"
+                    putlog "found svn username: $useName";
+                }
+            "--password=*" -
+            "-p=*" {
+                    set gotPw [lindex ${argv} ${idx}]
+                    set usePw [string range $gotPw 11 end];
+                    append usePw "\n"
+                    putlog "found svn password: $usePw";
+                }
+            "[^- ].*" {
+                    if { $foundCommand == 0 } {
+                        set svnCommand [lindex ${argv} ${idx}]
+                        set foundCommand 1
+                        putlog "found command: $svnCommand"
+                    } elseif { $foundRev == 0 } {
+                        set svnRev [lindex ${argv} ${idx}]
+                        set foundRev 1
+                        putlog "found target rev or name: $svnRev"
+                    } elseif { $foundName == 0 } {
+                        set svnFilename [lindex ${argv} ${idx}]
+                        set foundName 1
+                        putlog "found target name: $svnFilename"
+                    } else {
+                        append tmpArgs " " [lindex ${argv} ${idx}]
+                    }
+                }
+            ".*" {
+                        append tmpArgs " " [lindex ${argv} ${idx}]
+                }
+	}
+    }
+    if { $foundName == 0 } {
+        if { $foundRev != 0 } {
+            set svnFilename $svnRev
+            set foundName 1
+            set svnRev ""
+            set foundRev 0
+        }
+    }
+    if {"$tmpArgs" != ""} {
+        append svnArgs $tmpArgs
+    }
+    append svnArgs $svnFilename
+    if { "$svnRev" == "" } {
+        putlog "svn $svnCommand $svnArgs" ;
+    } else {
+        putlog "svn $svnCommand -r $svnRev $svnArgs" ;
+    }
+}
+
+
+
+###
+### "main"
+###
+
+
+putlog "process command line argc <${argc}> argv <${argv}>"
+
+svn_read_commandline_arguments
+
+if { "$svnRev" == "" } {
+    spawn -noecho svn $svnCommand $svnArgs
+} else {
+    spawn -noecho svn $svnCommand -r $svnRev $svnArgs
+}
+expect {
+    -re "(P|p)assword:" {
+        append testBuff "sending pw\n"
+    	exp_send ${usePw};
+    	expect {
+	    -re "(P|p)assword:" {
+                append testBuff "sending pw\n"
+	        exp_send ${usePw};
+                expect {
+                    -re "(P|p)assword:" {
+                       append testBuff "sending pw\n"
+                       exp_send ${usePw};
+                    }
+                }
+    	    }
+    	}
+    }
+    -re "(L|l)ogin:" {
+        append testBuff "sending login\n"
+    	exp_send ${useName};
+    	expect {
+		-re "(P|p)assword:" {
+                append testBuff "sending pw\n"
+		exp_send ${usePw};
+		expect {
+			-re "(P|p)assword:" {
+                                append testBuff "sending pw\n"
+				exp_send ${usePw};
+				}
+			}
+		}
+		-re "(L|l)ogin:" {
+                append testBuff "sending login\n"
+		exp_send ${useName};
+		expect {
+			-re "(P|p)assword:" {
+                                append testBuff "sending pw\n"
+				exp_send ${usePw};
+				}
+			}
+		}
+    	}
+    }
+}
+
+if { "$testBuff" != "" } {
+    putlog "testBuff: $testBuff"
+}
+###putlog "going live"
+
+catch {close $testLog}
+
+exit;
+
+
+
