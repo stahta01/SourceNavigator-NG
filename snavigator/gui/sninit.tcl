@@ -707,6 +707,8 @@ proc sn_init_globals {} {
 
         #rcs
         sn_add_option both rcs-type "rcs"
+        sn_add_option both credname "anonymous" string
+        sn_add_option both credpw "anonymous" string
 
         #default language
         sn_add_option def language "english" "" "" "" {sn_language}

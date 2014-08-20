@@ -1304,6 +1304,47 @@ itcl_class Preferences& {
           -contents ${values} -label ""
         pack ${sys} -side top -expand y -fill x
 
+	#login frame for revision control system
+        set rcscred [tixLabelFrame ${Rcs}.rcscred \
+          -label [get_indep String PrefVcLoginFrame "Version Control Login"] ]
+        ${rcscred} config -background $sn_options(def,layout-bg)
+        set win [${Rcs}.rcscred subwidget frame]
+        pack ${rcscred} -side top -fill x
+
+	#login name
+        set sn_options(opt_both,credname) $sn_options(both,credname)
+        set credname ${win}.credname
+        Entry& ${credname} \
+          -width 25 \
+          -labelwidth 10 \
+          -label [get_indep String PrefVcName "Username"] \
+          -underline 4 \
+          -textvariable sn_options(opt_both,credname) \
+          -balloon [get_indep String PrefVcNameHint "User name for version control"] \
+          -state normal \
+	  -filter none
+        pack ${credname} -side top -anchor nw -fill x
+
+	#login pw
+        set sn_options(opt_both,credpw) $sn_options(both,credpw)
+        set credpw ${win}.credpw
+        Entry& ${credpw} \
+          -width 25 \
+          -labelwidth 10 \
+          -label [get_indep String PrefVcPw "Password"] \
+          -textvariable sn_options(opt_both,credpw) \
+          -balloon [get_indep String PrevVcPwHint "Password for version control"] \
+          -state normal \
+	  -filter none
+        pack ${credpw} -side top -anchor nw -fill x
+
+        if {${new_project}} {
+            set state normal
+        } else {
+            set state disabled
+        }
+
+
         # Ignore directories
         set ignoredir [tixLabelFrame ${Rcs}.ignoredir \
           -label [get_indep String IgnoredDirectories]]
@@ -1896,6 +1937,8 @@ itcl_class Preferences& {
 
         if {[winfo exists ${Rcs}]} {
             verify_set both,rcs-type trap1
+            verify_set both,credname trap1
+            verify_set both,credpw trap1
 
             set sn_options(opt_def,ignored-directories) ""
             foreach dir [split [${ign_editor} get 0.0 end] \n] {
