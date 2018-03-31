@@ -38,7 +38,7 @@ MA 02111-1307, USA.
 #endif
 
 #include "longstr.h"
-#include "tcl.h"
+// #include "tcl.h"
 
 #define  STRING_SLOT_SIZE  500      /* It must be greater then 0 ! */
 #define  FIELD_POINTER_SLOT_SIZE 15 /* It must be greater then 0 ! */

@@ -27,7 +27,7 @@ MA 02111-1307, USA.
 #include <string.h>
 
 #include "srchtbl.h"
-#include "tcl.h"
+//#include "tcl.h"
 
 typedef enum {Find, Add, Delete} Search_Action;
 

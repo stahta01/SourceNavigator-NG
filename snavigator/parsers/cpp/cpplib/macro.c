@@ -28,7 +28,7 @@ MA 02111-1307, USA.
 #include <string.h>
 #include <stdlib.h>
 
-#include <tcl.h>
+// #include <tcl.h>
 
 #include "srchtbl.h"
 #include "cpdefines.h"

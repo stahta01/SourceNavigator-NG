@@ -25,7 +25,7 @@ MA 02111-1307, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <tcl.h>
+// #include <tcl.h>
 #include "cplex.h"
 
 static Token_t TokenFree_m;
