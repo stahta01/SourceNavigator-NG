@@ -30,7 +30,7 @@ MA 02111-1307, USA.
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <tcl.h>
+//#include <tcl.h>
 
 #ifdef __MSVC__
 #include <io.h>
@@ -42,7 +42,7 @@ MA 02111-1307, USA.
 #include <sys/param.h>
 #endif /* WIN32 */
 
-#include <tcl.h>
+//#include <tcl.h>
 #include "cpdefines.h"
 #include "cplex.h"
 #include "cpkeyw.h"
@@ -57,7 +57,7 @@ MA 02111-1307, USA.
 #define my_isdigit(x) (isdigit(x))
 #define my_isalnum(x) (isalnum(x))
 
-extern Tcl_Encoding encoding;
+// extern Tcl_Encoding encoding;
 static int yyeof;
 
 /* # define input() ( yyleng++, yycharno++, yychar = *yyptr++ ) */
@@ -99,7 +99,7 @@ static int lex_mode;
 static int token_in_line_count;
 int yylineno;
 int yycharno;
-static Tcl_DString yybuf;
+// static Tcl_DString yybuf;
 static unsigned char *yyptr;
 
 static Token_t TokenUnput;
@@ -144,6 +144,30 @@ extern Token_t yylex( void )
    }
 }
 
+#ifdef ZASKAR
+extern int
+f_ReadFile (int fd)
+{
+  int nbytes,sz=10240, tr=10240, rdn=0;
+  yyptr = malloc (sz);
+  while ( ( nbytes = read(fd, yyptr+rdn, tr) )==tr ) {
+	rdn+=nbytes;
+	tr=sz;
+	sz=sz*2;
+	yyptr=realloc(yyptr,sz);
+  }
+  rdn+=nbytes;
+  if (sz<rdn+1)
+      yyptr=realloc(yyptr,rdn+1);
+  *(yyptr+rdn)='\0';
+  yyeof = 0;
+  yylineno = 1;
+  yycharno = 0;
+  token_in_line_count = 0;
+  lex_mode = LEX_MODE_NORMAL;
+  return 0;
+}
+#else
 extern int
 f_ReadFile (int fd)
 {
@@ -223,7 +247,7 @@ f_ReadFile (int fd)
   
   return 0;
 }
-
+#endif
 extern Token_t f_TokenInput( void )
 {
    register unsigned char *yytext;
@@ -692,15 +716,15 @@ newline:
       case '>':   /* >, >>, >=, >>= */
          switch( input())
          {
-         case '>':
-            switch( input())
-            {
-            case '=':
-               d_TokenReturn( SN_RSassign )
-            default:
-               unput();
-               d_TokenReturn( SN_RS )
-            }
+/*         case '>':*/
+/*            switch( input())*/
+/*            {*/
+/*            case '=':*/
+/*               d_TokenReturn( SN_RSassign )*/
+/*            default:*/
+/*               unput();*/
+/*               d_TokenReturn( SN_RS )*/
+/*            }*/
 
          case '=':
             d_TokenReturn( SN_GE )
@@ -1640,9 +1664,16 @@ extern void f_FileTokenPrint( Token_t Token )
    END_WHILE
 }
 
+#ifdef ZASKAR
+void
+free_lex_buffers()
+{
+//  free(yyptr);
+}
+#else
 void
 free_lex_buffers()
 {
   Tcl_DStringFree(&yybuf);
 }
-
+#endif

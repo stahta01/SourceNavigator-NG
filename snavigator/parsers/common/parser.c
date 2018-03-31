@@ -33,7 +33,7 @@ MA 02111-1307, USA.
 
 #include "parser.h"
 
-#include <tcl.h>
+//#include <tcl.h>
 
 #include <sn.h>
 
@@ -69,120 +69,12 @@ int  comment_database = FALSE;
 FILE *cross_ref_fp;
 int	 report_local_vars = FALSE;
 
-static int Paf_Pipe_Write MX_VARARGS(char *,str);
-static int Paf_Pipe_Flush ();
-
 #ifndef MY_DEBUG2
 #define MY_DEBUG(x)
 #define MY_DEBUG2(x)
 #define MY_DEBUG(x)
 #endif
 
-void
-Paf_Pipe_Create(char *incl_to_pipe)
-{
-#ifdef WIN32
-	pipe_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-#else
-	pipe_handle = stdout;
-#endif /* WIN32 */
-
-	if (incl_to_pipe)
-	{
-		FILE    *ifp;
-		char    tmp[1024];
-
-		if ((ifp = fopen(incl_to_pipe,"r")) == NULL)
-		{
-			fprintf(stderr,"Error: couldn't load \"%s\", error: \"%s\"\n",
-				incl_to_pipe, strerror(errno));
-			fflush(stderr);
-			exit(1);
-		}
-		while (fgets(tmp,sizeof(tmp)-1,ifp))
-		{
-			Paf_Pipe_Write(tmp);
-		}
-		Paf_Pipe_Flush();
-
-		fclose(ifp);
-
-		unlink(incl_to_pipe);   /* Nobody needs it. */
-	}
-}
-
-int
-Paf_Pipe_Close()
-{
-	if (pipe_handle == INVALID_HANDLE_VALUE)
-		panic("pipe was not opened before Paf_Pipe_Close call");
-
-	pipe_handle = INVALID_HANDLE_VALUE;
-
-	return 0;
-}
-
-static int
-Paf_Pipe_Write MX_VARARGS_DEF(char *, arg1)
-{
-	va_list args;
-	char    *fmt;
-	char    tmp[10000];
-	int     len;
-#ifdef WIN32
-	DWORD     cou;
-#else
-	int     cou;
-#endif
-	Tcl_DString utfBuffer;
-
-	if (pipe_handle == INVALID_HANDLE_VALUE)
-		return -1;
-
-	fmt = (char *)MX_VARARGS_START(char *,arg1,args);
-
-	len = vsprintf(tmp,fmt, args);
-	for (fmt = tmp; len > 0;)
-	{
-		cou = 0;
-		Tcl_ExternalToUtfDString(NULL, tmp, len, &utfBuffer);
-#ifdef _WINDOWS
-		if (WriteFile(pipe_handle,Tcl_DStringValue(&utfBuffer),
-		    Tcl_DStringLength(&utfBuffer),&cou,NULL) == FALSE)
-		{
-			Tcl_DStringFree(&utfBuffer);
-			return FALSE;
-		}
-#else
-		cou = fprintf(pipe_handle,"%s",Tcl_DStringValue(&utfBuffer));
-		if (cou == -1) {
-			Tcl_DStringFree(&utfBuffer);
-			return FALSE;
-		}
-#endif
-
-		if (cou > 0)
-		{
-			fmt += cou;
-			len -= cou;
-		}
-		Tcl_DStringFree(&utfBuffer);
-	}
-	return TRUE;
-}
-
-
-static int
-Paf_Pipe_Flush()
-{
-	if (pipe_handle == INVALID_HANDLE_VALUE)
-		return -1;
-#ifdef  WIN32
-	return (int)FlushFileBuffers(pipe_handle);
-#else
-	return fflush(pipe_handle);
-#endif /* __MSVC__ */
-}
 
 /* This functions writes out a file parsing status line.
  * It is invoked by the various parser routines to write
@@ -192,8 +84,8 @@ Paf_Pipe_Flush()
 
 void
 put_status_parsing_file(char *fname) {
-    Paf_Pipe_Write("Status: Parsing: %s\n", fname);
-    Paf_Pipe_Flush();
+//     Paf_Pipe_Write("Status: Parsing: %s\n", fname);
+//     Paf_Pipe_Flush();
 }
 
 
@@ -211,18 +103,13 @@ put_file(char *file_name,char *group,char *highlight_file)
 		return -1;
 	}
 
-	if (pipe_handle == INVALID_HANDLE_VALUE)
-	{
-		panic("put_file called when pipe is not open");
-	}
-
-	Paf_Pipe_Write("%d%c%s%c%s%c%s\n",
+	printf("%d%c%s%c%s%c%s\n",
 		PAF_FILE,      KEY_DATA_SEP_CHR,
 		file_name,     KEY_DATA_SEP_CHR,
 		group,         DB_FLDSEP_CHR,
 		highlight_file ? highlight_file : "");
 
-	return Paf_Pipe_Flush();       /* 'dbimp' can start deleting. */
+	return TRUE;       /* 'dbimp' can start deleting. */
 }
 
 
@@ -255,26 +142,26 @@ int     high_end_colpos)
 
 	if (!file_name)
 	{
-		fprintf(stderr,"Error: put_symbol argument file_name must not be NULL\n");
-		fflush(stderr);
+// 		fprintf(stderr,"Error: put_symbol argument file_name must not be NULL\n");
+// 		fflush(stderr);
 		return -1;
 	}
 	for (; isspace(*file_name); file_name++);
 
 	if (!sym_str_type)
 	{
-		fprintf(stderr,"Error: put_symbol unknown type: %d file: %s\n",
-			sym_type,file_name);
-		fflush(stderr);
+// 		fprintf(stderr,"Error: put_symbol unknown type: %d file: %s\n",
+// 			sym_type,file_name);
+// 		fflush(stderr);
 		return -1;
 	}
 
 	if (!symbol_name || !*symbol_name)
 	{
-		fprintf(stderr,
-			"Error: put_symbol argument #3 must not be empty, type: (%s), line: %d file: %s\n",
-			sym_str_type,start_lineno,file_name);
-		fflush(stderr);
+// 		fprintf(stderr,
+// 			"Error: put_symbol argument #3 must not be empty, type: (%s), line: %d file: %s\n",
+// 			sym_str_type,start_lineno,file_name);
+// 		fflush(stderr);
 		return -1;
 	}
 
@@ -320,21 +207,21 @@ int     high_end_colpos)
 		}
 	}
 
-	switch (sym_type)
-	{
-	case	PAF_TYPE_DEF:
-	case	PAF_CLASS_DEF:
-	case	PAF_ENUM_DEF:
-	case	PAF_CONS_DEF:
-	case	PAF_MACRO_DEF:
-	case	PAF_FUNC_DEF:
-	case	PAF_GLOB_VAR_DEF:
-	case	PAF_FUNC_DCL:
-	case	PAF_UNION_DEF:
-	case	PAF_ENUM_CONST_DEF:
-		scope_name = NULL;
-		break;
-	}
+/*	switch (sym_type)*/
+/*	{*/
+/*	case	PAF_TYPE_DEF:*/
+/*	case	PAF_CLASS_DEF:*/
+/*	case	PAF_ENUM_DEF:*/
+/*	case	PAF_CONS_DEF:*/
+/*	case	PAF_MACRO_DEF:*/
+/*	case	PAF_FUNC_DEF:*/
+/*	case	PAF_GLOB_VAR_DEF:*/
+/*	case	PAF_FUNC_DCL:*/
+/*	case	PAF_UNION_DEF:*/
+//	case	PAF_ENUM_CONST_DEF:
+/*		scope_name = NULL;*/
+/*		break;*/
+/*	}*/
 
 	/* Skip leading blanks */
 	for (;scope_name && isspace(*scope_name); scope_name++);
@@ -351,10 +238,10 @@ int     high_end_colpos)
 		case PAF_CLASS_INHERIT:
 		case PAF_MBR_FUNC_DCL:
 /*		case PAF_ENUM_CONST_DEF: */
-			fprintf(stderr,
-				"Error: put_symbol argument #2 must not be empty, type: (%s), line: %d file: %s\n",
-				sym_str_type,start_lineno,file_name);
-			fflush(stderr);
+// 			fprintf(stderr,
+// 				"Error: put_symbol argument #2 must not be empty, type: (%s), line: %d file: %s\n",
+// 				sym_str_type,start_lineno,file_name);
+// 			fflush(stderr);
 			return -1;
 			break;
 		}
@@ -368,18 +255,19 @@ int     high_end_colpos)
 		high_end_colpos = start_colpos + strlen(symbol_name);
 	}
 
-	if (pipe_handle == INVALID_HANDLE_VALUE)
-	{
-		panic("put_symbol called when pipe is not open");
-	}
+// 	if (pipe_handle == INVALID_HANDLE_VALUE)
+// 	{
+// 		panic("put_symbol called when pipe is not open");
+// 	}
 
-	Paf_Pipe_Write("%d%c%s%s%s%c%06d.%03d%c%s%c%d.%d%c0x%x%c{%s}%c{%s}%c{%s}%c{%s}\n",
+	/// ZASKAR - SCOPES - AGREGAR UN SEPARATOR ENTRE SCOPE Y NAME
+	printf("%d%c%s%s%s%c%06d.%03d%c%s%c%d.%d%c0x%x%c{%s}%c{%s}%c{%s}%c{%s}\n",
 		sym_type,                        KEY_DATA_SEP_CHR,
 		scope_name ? scope_name : "",
 		scope_name ? DB_FLDSEP_STR : "",
 		symbol_name,                     DB_FLDSEP_CHR,
 		high_start_lineno,
-                    high_start_colpos,           DB_FLDSEP_CHR,
+		high_start_colpos,           DB_FLDSEP_CHR,
 		file_name,                       KEY_DATA_SEP_CHR,
 		high_end_lineno, high_end_colpos,DB_FLDSEP_CHR,
 		attr,                            DB_FLDSEP_CHR,
@@ -389,18 +277,18 @@ int     high_end_colpos)
 		comment
 		);
 
-	Paf_Pipe_Write("%d%c%s%c%06d.%03d%c%s%c%s%c%s%c%d.%d%c%d.%d%c%d.%d%c{%s}\n",
-		PAF_FILE_SYMBOLS,                     KEY_DATA_SEP_CHR,
-		file_name,                            DB_FLDSEP_CHR,
-		start_lineno, start_colpos,           DB_FLDSEP_CHR,
-		scope_name ? scope_name : "#",        DB_FLDSEP_CHR,
-		symbol_name,                          DB_FLDSEP_CHR,
-		sym_str_type,                         KEY_DATA_SEP_CHR,
-		end_lineno,        end_colpos,        DB_FLDSEP_CHR,
-		high_start_lineno, high_start_colpos, DB_FLDSEP_CHR,
-		high_end_lineno,   high_end_colpos,   DB_FLDSEP_CHR,
-		arg_types ? arg_types : ""
-		);
+// 	Paf_Pipe_Write("%d%c%s%c%06d.%03d%c%s%c%s%c%s%c%d.%d%c%d.%d%c%d.%d%c{%s}\n",
+// 		PAF_FILE_SYMBOLS,                     KEY_DATA_SEP_CHR,
+// 		file_name,                            DB_FLDSEP_CHR,
+// 		start_lineno, start_colpos,           DB_FLDSEP_CHR,
+// 		scope_name ? scope_name : "#",        DB_FLDSEP_CHR,
+// 		symbol_name,                          DB_FLDSEP_CHR,
+// 		sym_str_type,                         KEY_DATA_SEP_CHR,
+// 		end_lineno,        end_colpos,        DB_FLDSEP_CHR,
+// 		high_start_lineno, high_start_colpos, DB_FLDSEP_CHR,
+// 		high_end_lineno,   high_end_colpos,   DB_FLDSEP_CHR,
+// 		arg_types ? arg_types : ""
+// 		);
 
 	return 0;
 }
@@ -567,29 +455,3 @@ int	acc)
 
 	return 0;
 }
-
-/*
- *      We have to conver '\\' to '/'. That's all.
- */
-char *
-Paf_tempnam(char *dir,char *pref)
-{
-	static	char	tmpnm[MAXPATHLEN + 1];
-	char    *nm;
-
-	nm = tempnam(dir,pref);
-
-	if (!nm)
-		return nm;
-
-	unlink(nm);     /* Just to be very sure !!! */
-
-	strcpy (tmpnm, nm);
-	sn_internal_convert_path (tmpnm, SN_PATH_UNIX);
-	
-	/* DON'T USE ckfree */
-	free(nm);
-
-	return tmpnm;
-}
-

@@ -120,5 +120,8 @@ MA 02111-1307, USA.
 # define SN_PP_INCLUDE 351
 # define SN_INTERFACE 352
 # define SN_BOOL 353
+/* added by zaskar for c++11 */
+# define SN_OVERRIDE 354
+# define SN_FINAL 355
 
 

@@ -38,7 +38,7 @@ MA 02111-1307, USA.
 
 #include <stdio.h>
 #include <string.h>
-#include <tcl.h>
+//#include <tcl.h>
 #include <ctype.h>
 
 #include "cplex.h"
@@ -172,6 +172,7 @@ struct sDeclarator
    LongString names; /* falls function definition */
    int base_typ;
    int pure;
+	int z_const_or_volatile; // agregado por Zaskar para saber si un metodo es const (1) o volatile (2)
    int lineno_beg;
    int charno_beg;
    int lineno_end;
@@ -266,8 +267,8 @@ extern int _member_declaration( Class_t Class );
 extern int member_declarator_list( Class_t Class, Declaration_t Declaration );
 extern int member_declarator( Declarator_t Declarator );
 extern int f_enum( Declaration_t Declaration, Enum_t Enum );
-extern int enum_list( Enum_t Enum );
-extern int enumerator( Enum_t Enum );
+extern int enum_list( Enum_t Enum, char *scope ); /// scope agregado por Zaskar para saber en qué clase se declara el enum
+extern int enumerator( Enum_t Enum, char *scope ); /// scope agregado por Zaskar para saber en qué clase se declara el enum
 extern int operator_function_name( LongString *plstr );
 extern int conversion_type_name( LongString *plstr );
 extern int conversion_type_specifier( LongString *plstr );
@@ -1578,11 +1579,17 @@ extern int function_operator( Declarator_t Declarator )
       }
    }
 
+	Declarator->z_const_or_volatile=0;
    while( True )
    {
       int t = token( 0 );
 
       if( t == SN_CONST || t == SN_VOLATILE )
+      {
+			Declarator->z_const_or_volatile=True;
+         step( 1 );
+      }
+      else if( t == SN_OVERRIDE ) /* added by Zaskar for C++11 */
       {
          step( 1 );
       }
@@ -1684,7 +1691,7 @@ extern int f_class( Declaration_t Declaration, Class_t Class )
    }
 
    step( 1 );
-
+	
    skip_macro_2();   /* 17.11.97 rigo */
 
    switch( token( 0 ))
@@ -1696,15 +1703,26 @@ extern int f_class( Declaration_t Declaration, Class_t Class )
       {
          step( 1 );  /* atlepjuk a G_EXP_IMP-et */
       }
-
+		
       lineno = f_lineno( 0 );
       charno = f_charno( 0 );
       Class->lineno_beg = lineno;
       Class->charno_beg = charno;
 
-      LongStringIdAppend( &Class->name, ident( 0 ));
+      
+		/// ZASKAR - SCOPES - DESCOMENTAR ESTO PARA TENER SCOPES ANIDADOS COMPLETOS
+/*		if (Class->ClassParent) {*/
+/*			LongStringMyAppend(&Class->name,Class->ClassParent->name.buf);*/
+/*			LongStringMyAppend(&Class->name,"::");*/
+/*		}*/
+		LongStringIdAppend( &Class->name, ident( 0 ));
 
       step( 1 );
+		
+		if( token( 0 ) == SN_FINAL ) /* added by Zaskar for C++11 */
+		{
+			step( 1 ); 
+		}
 
       if( token( 0 ) == '<' )
       {
@@ -2250,7 +2268,7 @@ extern int _member_declaration( Class_t Class )
             konstrukciot ), akkor nem lehet deklarator_list */
          if(( token( 1 ) == '*' ) ||
             ( token( 1 ) == '&' ) ||
-            ( token( 1 ) == SN_IDENTIFIER && ( token( 2 ) != '(' || token( 3 ) != '(' ))
+            ( (token( 1 ) == SN_IDENTIFIER || token( 1 ) == SN_OPERATOR) && ( token( 2 ) != '(' || token( 3 ) != '(' ))
            )
          {
          }
@@ -2323,6 +2341,12 @@ extern int _member_declaration( Class_t Class )
             Return( False )
          }
          break;
+			
+		/// added by Zaskar
+		case SN_TEMPLATE:
+			step(1);
+			template_argument_skip(NULL);
+			break;
 
       default         :
          Restore_d();
@@ -2506,7 +2530,7 @@ extern int f_enum( Declaration_t Declaration, Enum_t Enum )
          char *classname_save = classname_g;         /* 08.04.97 */
          comment = get_comment( Enum->lineno_end );
          classname_g = my_strdup( Enum->name.buf );      /* 07.04.97 */
-         enum_list( Enum );
+         enum_list( Enum, classname_save );
          while(( t = token( 0 )) != RBRACE && t != 0 )   /* t != 0 10.02.97 rigo */
          {
             step( 1 );
@@ -2525,7 +2549,7 @@ extern int f_enum( Declaration_t Declaration, Enum_t Enum )
                    , f_lineno( -1 )
                    , f_charno( -1 ) + 1
                    , (unsigned long) 0
-                   , (char *) 0
+                   , classname_g
                    , (char *) 0
                    , (char *) 0
                    , comment
@@ -2569,7 +2593,7 @@ extern int f_enum( Declaration_t Declaration, Enum_t Enum )
       lineno = f_lineno( 0 );
       charno = f_charno( 0 ) + 1;
       comment = get_comment( Enum->lineno_end );
-      enum_list( Enum );
+      enum_list( Enum, NULL);
       while(( t = token( 0 )) != RBRACE && t != 0 )   /* t != 0 10.02.97 rigo */
       {
          step( 1 );
@@ -2613,12 +2637,12 @@ extern int f_enum( Declaration_t Declaration, Enum_t Enum )
    return True;
 }
 
-extern int enum_list( Enum_t Enum )
+extern int enum_list( Enum_t Enum , char *scope) /// scope agreado por Zaskar para saber en que clase esta el enum
 {
    niveau++;
    step( 1 );
 
-   while( enumerator( Enum ))
+   while( enumerator( Enum , scope ))
    {
       if( token( 0 ) == ',' )
       {
@@ -2630,16 +2654,16 @@ extern int enum_list( Enum_t Enum )
    return True;
 }
 
-extern int enumerator( Enum_t Enum )
+extern int enumerator( Enum_t Enum , char *scope ) /// scope agreado por Zaskar para saber en que clase esta el enum
 {
+	if (scope==NULL) scope="-"; /// by Zaskar, es importante que no sea null, porque no tiene distinto id el enum const con y sin scope
    Save_d();
    niveau++;
-
    if( token( 0 ) == SN_IDENTIFIER )
    {
       Put_symbol( PAF_ENUM_CONST_DEF
 /*              , Enum->name */
-                , NULL                          /* 17.02.97 rigo */
+                , scope                          /* 17.02.97 rigo */ /// scope agregado por Zaskar (antes era NULL)
                 , StringToText( ident( 0 ))
                 , filename_g
                 , f_lineno( 0 )
@@ -3017,14 +3041,33 @@ extern int qualified_name( LongString *plstr, int *plineno, int *pcharno )
    }
    else if( token( 0 ) == SN_IDENTIFIER && token( 1 ) == '<' )
    {
-      if( plstr )
+      
+		/* ORIGINAL CODE 
+		if( plstr )
       {
          LongStringIdAppend( plstr, ident( 0 ));
          LongStringMyAppend( plstr, "::" );
       }
-
       step( 1 );
-      template_argument_skip( plstr );
+      template_argument_skip( plstr ); */
+		
+		/* ALTERNATIVE VERSION BY ZASKAR, 
+		   TO CONSIDER CONSTRUCTORS WITH EXPLICIT TEMPLATE ARGUMENTS 
+		   template<typename T> class foo { foo<T>(); }; */
+		if( plstr )
+		{
+			LongStringIdAppend( plstr, ident( 0 ));
+		}
+		step(1);
+		if (token(0)=='<') {
+			template_argument_skip( NULL );
+			if (token(0)=='(') {
+				niveau--;
+				return True;
+			}
+		}
+		if( plstr ) LongStringMyAppend( plstr, "::" );
+		
       if( token( 0 ) == SN_CLCL )
       {
          step( 1 );
@@ -3258,6 +3301,7 @@ end:
       array_change_not_changed( ArrayTypes, ArrayNames );
 
       array_to_string( types, ArrayTypes );
+//      array_to_string_2( names, ArrayTypes,ArrayNames );
       array_to_string( names, ArrayNames );
    }
 
@@ -4029,6 +4073,8 @@ extern void class_member( Class_t Class, Declaration_t Declaration, Declarator_t
    case SN_PUBLIC    :  attr |= PAF_PUBLIC   ; break;
    }
 
+   if (Declarator->z_const_or_volatile==True) attr|=PAF_CONST_OR_VOLATILE; // const
+		
    if( Declaration->storage_class == SN_TYPEDEF )
    {
       Put_symbol( PAF_TYPE_DEF
@@ -4202,6 +4248,8 @@ extern void class_method( Class_t Class, Declaration_t Declaration, Declarator_t
    case SN_PROTECTED :  attr |= PAF_PROTECTED; break;
    case SN_PUBLIC    :  attr |= PAF_PUBLIC   ; break;
    }
+	
+	if (Declarator->z_const_or_volatile==True) attr|=PAF_CONST_OR_VOLATILE; // const
 
    if( Declaration->storage_class == SN_TYPEDEF )
    {
@@ -5254,6 +5302,7 @@ extern int function_argument_declarator_one( Declarator_t Declarator )
       }
       if( t == '=' || t == '+' || t == '-' )
       {
+			if (token(1)=='{') skip_declaration(); else // ZASKAR: para saltear inicializaciones de argumentos por defecto con llaves (cosas como void "foo(Pixel p={1,2,3}, float x);"... saltea el "={1,2,3}")
          skip_expression();
          niveau--;
          return True;
@@ -5294,6 +5343,9 @@ extern void skip_expression( void )
             return;
          }
          break;
+		case 0: // eof
+			niveau--;
+			return;
       }
       step( 1 );
    }
@@ -5932,7 +5984,7 @@ extern void create_type( LongString *type, Declaration_t Declaration, Declarator
    
    if( ! bType )
    {
-      f_Strcat( type, "int" );
+      f_Strcat( type, "NULL" ); // ZASKAR: antes decir "int" en lugar de "NULL", pero lo puse para diferenciar macros como el DECLARE_EVENT_TABLE de wx
       bType = True;
    }
 
@@ -6165,7 +6217,7 @@ extern void put_cross1( int type, char *scope, char *sym_name, char *file, int s
 {
    if( cross_ref_fp )
    {
-      Tcl_DString utfString;
+//      Tcl_DString utfString;
       char tmp[1000];
 
       snprintf(tmp, sizeof(tmp), "%d;%d;%s;%d;%d;%d;%d;%ld;%s;%s;%s;%s;%s;%d;\n"
@@ -6184,9 +6236,9 @@ extern void put_cross1( int type, char *scope, char *sym_name, char *file, int s
           , null_safe( names )
           , keyw_cpp
           );
-      Tcl_ExternalToUtfDString(NULL, tmp, -1, &utfString);
-      fprintf( cross_ref_fp, "%s", Tcl_DStringValue(&utfString));
-      Tcl_DStringFree(&utfString);
+//      Tcl_ExternalToUtfDString(NULL, tmp, -1, &utfString);
+//      fprintf( cross_ref_fp, "%s", Tcl_DStringValue(&utfString));
+//      Tcl_DStringFree(&utfString);
    }
 }
 
@@ -6447,6 +6499,28 @@ extern void array_to_string( LongString *plstr, Array_t Array )
    }
 }
 
+extern void array_to_string_2( LongString *plstr, Array_t Array, Array_t Array_2 )
+{
+/* LongStringInit( plstr, -1 );  17.11.97 rigo */
+   LongStringMyFree( plstr ); /* 17.11.97 rigo */
+
+   if( Array )
+   {
+      int i;
+
+      for( i = 0; Array[i].string; i++ )
+      {
+         if( i > 0 )
+         {
+            LongStringMyAppend( plstr, "," );
+         }
+         LongStringMyAppend( plstr, Array[i].string );
+         LongStringMyAppend( plstr, "," );
+         LongStringMyAppend( plstr, Array_2[i].string );
+      }
+   }
+}
+
 /* A kovetkezo miatt:
 **    int imag (const x) __attribute__ ((const))
 **    {
@@ -6471,7 +6545,8 @@ extern int skip_macro( int t )
          int i = 1;
          step( 1 );
 
-         while( i > 0 )
+//          while( i > 0 ) // ZASKAR: esto estaba antes, pero se colgaba ante sintaxis incorrectas
+         while( i > 0 && ivt!=iva )
          {
             if( token( 0 ) == ')' )
             {
@@ -6852,6 +6927,10 @@ extern int skip_member_macro( void )  /* 01.08.97 rigo */
             {
                break;
             }
+            else if( token( 0 ) == 0 ) // agregado por Zaskar para saber evitar loops infinitos en código mal escritos (donde falta cerrar los paréntesis del prototipo de un método en una clase)
+            {
+               break; // en of file
+            }
             step( 1 );
          }
 
@@ -6902,6 +6981,7 @@ extern void Put_Macro( Token_t Token )
    char *pcBeg;
    char *pcEnd;
    char  cEnd;
+   char *zp,*zpp,*z,*zz,zc,zcc;
    int leng;
 
    leng = Token->sString.leng;
@@ -6911,6 +6991,28 @@ extern void Put_Macro( Token_t Token )
    pcBeg = Token->sString.text + 0     ; 
    pcEnd = Token->sString.text + (leng);
    cEnd  = *pcEnd;
+	
+   z=Token->sString.text+(leng); 
+   if (*z=='(') {
+	   zpp=z+1;
+	   while (*z!=')' && *z!='\n' && *z!='\r' && *z!='\0')
+		   z=z+1;
+   }
+	if (*z!=')')
+		zpp=NULL;
+   zp=z;
+   zcc=*z;
+   *z='\0';
+   z=z+1;
+   
+   while (*z==' ' || *z=='\t') { z=z+1; }
+   zz=z;
+   while (*zz!='\n' && *zz!='\r' && *zz!='\0') { zz=zz+1;}
+   zz=zz-1;
+   while (zz>z && (*zz==' ' || *zz=='\t') ) { zz=zz-1; }
+   zz=zz+1;
+   zc=*zz;
+   *zz='\0';
 
    *pcEnd = 0;
 
@@ -6924,8 +7026,8 @@ extern void Put_Macro( Token_t Token )
              , Token->charno_end
              , (unsigned long) 0
 /*           , (char *) 0           21.11.97 rigo */
-             , Token->pcValue    /* 21.11.97 rigo */
-             , (char *) 0
+             , zpp==NULL?"-":zpp
+             , z
              , (char *) 0
              , (char *) 0
              , Token->lineno_beg
@@ -6933,6 +7035,9 @@ extern void Put_Macro( Token_t Token )
              , Token->lineno_end
              , Token->charno_end
              );
+
+   *zz=zc;
+   *zp=zcc;
 
    *pcEnd = cEnd;
 }
@@ -6970,7 +7075,7 @@ extern void Put_Include( Token_t Token )
 
    Put_symbol( PAF_INCLUDE_DEF
             , NULL
-            , Paf_Search_Include_dir( pcBeg )
+            , pcBeg //Paf_Search_Include_dir( pcBeg )
             , filename_g
             , Token->lineno_beg
             , Token->charno_beg +1

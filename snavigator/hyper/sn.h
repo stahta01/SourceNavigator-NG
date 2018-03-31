@@ -73,7 +73,6 @@ MA 02111-1307, USA.
 #define PAF_CROSS_REF_FILE 30
 #define PAF_SYMBOL_TYPE_MAX 31 /* Must be index of sizeof(SN_symbol_types) */
 
-
 /* Cross reference values. */
 #define PAF_REF_TO_TYPEDEF PAF_TYPE_DEF
 #define PAF_REF_TO_DEFINE  PAF_MACRO_DEF
@@ -110,6 +109,8 @@ MA 02111-1307, USA.
 #define PAF_PUBLIC              0x000004
 #define PAF_STATIC              0x000008
 #define PAF_VIRTUAL             0x001000
+
+#define PAF_CONST_OR_VOLATILE   0x80000 // agregado por zaskar
 
 #define PAF_ABSTRACT            0x000010
 #define PAF_FINAL               0x000020
@@ -189,7 +190,7 @@ extern void Paf_panic (int level);
 extern char * SN_GetSymbolType(int type);
 
 #if WIN32
-extern int getopt _ANSI_ARGS_((int argc,char **argv,char *opt));
+//extern int getopt _ANSI_ARGS_((int argc,char **argv,char *opt));
 #endif /* WIN32 */
 
 #if (__cplusplus)

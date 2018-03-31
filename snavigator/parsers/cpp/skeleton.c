@@ -34,8 +34,12 @@ MA 02111-1307, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <tcl.h>
-#include "dbutils.h"
+// #include <tcl.h>
+//#include "dbutils.h"
+#include "mxdefine.h"
+#include "sn.h"
+//#include "tcl.h"
+
 #include "parser.h"
 
 #ifdef WIN32
@@ -46,7 +50,7 @@ MA 02111-1307, USA.
 
 /* Tcl encoding to translate from. The default (when equal to NULL) is to
    do no translation. */
-Tcl_Encoding encoding = NULL;
+//Tcl_Encoding encoding = NULL;
 
 extern   int yyfd;
 
@@ -87,21 +91,21 @@ log_symbol_filename(FILE *fp,char *fname)
        return 1;
    }
 
-   if (highlight)
-   {
-       if (hig_fp)
-       {
-           fclose(hig_fp);
-       }
-
-       outfile = Paf_tempnam(NULL,"hc");
-       if (fp)
-       {
-           fprintf(fp,"%s\n",outfile);
-       }
-
-       hig_fp = fopen(outfile,"w+");
-  }
+//    if (highlight)
+//    {
+//        if (hig_fp)
+//        {
+//            fclose(hig_fp);
+//        }
+// 
+//        outfile = Paf_tempnam(NULL,"hc");
+//        if (fp)
+//        {
+//            fprintf(fp,"%s\n",outfile);
+//        }
+// 
+//        hig_fp = fopen(outfile,"w+");
+//   }
   put_status_parsing_file(fname);
 
   if (parse_cplpl)
@@ -117,12 +121,11 @@ log_symbol_filename(FILE *fp,char *fname)
   return 0;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
    extern int optind;
    extern char *optarg;
-   int   opt;
+   int   opt, cont;
    char  tmp[MAXPATHLEN];
    char  *fname;
    char  *db_prefix = NULL;
@@ -131,141 +134,14 @@ main(int argc, char *argv[])
    char  *include_files = NULL;
    char  *cross_ref_file = NULL;
 
-   /* Character set encoding (as defined by Tcl). */
-   Tcl_FindExecutable(argv[0]);
 
-   while((opt = getopt(argc,argv,"e:s:n:hy:I:g:i:ltx:Cr:O:m:")) != EOF)
-   {
-      switch (opt)
-      {
-      case 's':
-         break;
-
-      case 'n':
-         db_prefix = optarg;
-         break;
-
-      case 'e':
-	if ((encoding = Tcl_GetEncoding(NULL, optarg)) == NULL)
-	{
-		fprintf(stderr, "Unable to locate `%s' encoding\n", optarg);
-		return 1;
+	/* This part is called when the project is beeing created. */
+	for (cont=1;cont<argc;cont++) {
+		strcpy(tmp,argv[cont]);
+		if (log_symbol_filename(out_fp,tmp) == 0) {
+			start_parser(tmp,parse_cplpl,NULL,0);
+		}
 	}
-	break;
-
-      case 'h':
-         break;
-
-      case 'y':
-         list_file = optarg;
-         break;
-
-      case 'I':
-         include_files = optarg;
-         break;
-
-      case 'i':
-         incl_to_pipe = optarg;
-         break;
-
-      case 'C': /* Parser files as C and not as C++! */
-         parse_cplpl = FALSE;
-         break;
-
-      case 'l': /* local variables (ignored) */
-         report_local_vars = TRUE;
-         break;
-
-      case 'x': /* cross reference file */
-         cross_ref_file = optarg;
-         break;
-
-      case 'r': /* Remark (comment support) */
-         comment_database = TRUE;
-         break;
-
-      case 'm':
-         MacroReadFile(optarg);
-         break;
-
-      /* ignore switches: */
-      case 't': /* Drop /usr files. */
-      case 'g':   /* group */
-         break;
-      }
-   }
-
-   if (cross_ref_file)
-   {
-      if (!(cross_ref_fp = fopen(cross_ref_file,"a")))
-      {
-         fprintf(stderr, "Error: (open) \"%s, errno: %d\"\n",
-            cross_ref_file,errno);
-         exit(1);
-      }
-   }
-
-   if (optind < argc || list_file)
-   {
-      Paf_Pipe_Create(incl_to_pipe);
-
-      if (include_files)
-      {
-         /* include_fp will be closed !! */
-         Paf_Open_Include_Dirs(include_files,db_prefix);
-      }
-
-      if (list_file)
-      {
-         FILE  *list_fp = fopen(list_file,"r");
-
-         if (!list_fp)
-         {
-            fprintf(stderr,"Could not open: \"%s\", %s\n",
-               list_file,
-               strerror(errno));
-
-            exit(2);
-         }
-
-      /* This part is called when the project is beeing created. */
-         while (fgets(tmp,sizeof(tmp) -1,list_fp))
-         {
-            if ((fname = strchr(tmp,'\n')))
-            {
-               *fname = '\0';
-            }
-            if (!*tmp || *tmp == '#')
-               continue;
-
-            if (log_symbol_filename(out_fp,tmp) == 0)
-            {
-               start_parser(tmp,parse_cplpl,NULL,0);
-            }
-         }
-         fclose(list_fp);
-      }
-      else
-      {
-      /* This part is called when a file has been saved, thus
-       * we parse the file and provide highlighting.
-       */
-         fname = argv[optind];
-         if (!log_symbol_filename(out_fp,fname))
-         {
-            start_parser(fname,parse_cplpl,hig_fp,highlight);
-         }
-      }
-
-      MacroFreeTable();
-
-      Paf_Close_Include_Dirs();
-   }
-   else
-   {
-      fprintf(stderr, "-y or file name required\n");
-      exit(1);
-   }
 
    if (yyfd != -1)
       close(yyfd);
@@ -276,7 +152,6 @@ main(int argc, char *argv[])
    if (hig_fp && hig_fp != out_fp)
       fclose(hig_fp);
 
-   Paf_Pipe_Close();
 
    if (cross_ref_fp)
       fclose(cross_ref_fp);
@@ -284,11 +159,6 @@ main(int argc, char *argv[])
    free_lex_buffers();
    free_token_buffers();
 
-   if (encoding != NULL)
-	{
-		Tcl_FreeEncoding(encoding);
-		Tcl_Finalize();
-	}
    return 0;
 }
 
